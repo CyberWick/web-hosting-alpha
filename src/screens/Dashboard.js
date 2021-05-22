@@ -15,7 +15,6 @@ import Grid from '@material-ui/core/Grid';
 import Paper from '@material-ui/core/Paper';
 import Link from '@material-ui/core/Link';
 import MenuIcon from '@material-ui/icons/Menu';
-import { mainListItems, secondaryListItems } from '../components/ListItems';
 import Chart from '../components/Chart';
 import Deposits from '../components/Deposits';
 import Orders from '../components/Orders';
@@ -25,15 +24,19 @@ import { CircularProgress } from '@material-ui/core';
 import { useSelector } from 'react-redux';
 import { AccountCircle } from '@material-ui/icons';
 
+import BucketsList from '../components/ListBuckets';
+
+import Backdrop from '@material-ui/core/Backdrop';
+// import CircularProgress from '@material-ui/core/CircularProgress';
+import NewBucket from '../components/newBucket.js'
+
 const users = new Users({ endpoint: 'wss://auth.space.storage' });
 
 function Copyright() {
   return (
     <Typography variant="body2" color="textSecondary" align="center">
       {'Copyright © '}
-      <Link color="inherit" href="https://material-ui.com/">
-        Your Website
-      </Link>{' '}
+        G -20
       {new Date().getFullYear()}
       {'.'}
     </Typography>
@@ -120,9 +123,19 @@ const useStyles = makeStyles((theme) => ({
     height: 240,
   },
   loadContainer: {
-    marginTop: window.innerHeight/2,
+    marginTop: window.innerHeight,
     marginLeft: (window.innerWidth-240)/2,
-  }
+    height : '100%'
+  },
+  backdrop: {
+    zIndex: theme.zIndex.drawer + 1,
+    color: '#fff',
+  },
+  bucketListStyle : {
+		"overflowY": 'auto',
+		height: '70%',
+
+	},
 }));
 
 
@@ -138,7 +151,7 @@ export default function Dashboard() {
   const [listBucket, setListBucket] = useState([]);
   const [totalFiles, setTotalFiles] = useState(-1);
   const [operation, setOperation] = useState('');
-
+  const [selectedBucket, setSelectedBucket] = useState('')
 
   useEffect(() => {
     console.log('Running useEffect');
@@ -161,8 +174,8 @@ export default function Dashboard() {
   // TODO: Use this func on bucket change... pass bucket root and index
 
   const onLoadBucket = async(bucketRoot, index) => {
+      setCurrBucket(index);  
       await buckets.getOrCreate(bucketRoot.name);
-      setCurrBucket(index);
       const inLinks = await buckets.links(bucketRoot.key);
       console.log('CLIENT', client);
       const genThread = ThreadID.fromString(bucketRoot.thread);
@@ -179,19 +192,24 @@ export default function Dashboard() {
     } else {
       setLoading(true);
       const result = await buckets.remove(listBucket[currBucket].key);
-      setListBucket(prev => {
-        console.log('BEFORE SPLICE', prev);
-        const modPrev = prev.splice(currBucket, 1);
-        console.log('SPLICE LIST BUCKETS', modPrev);
-        return modPrev;
-      })
+      const newBuckList = await buckets.existing()
+      // setListBucket(prev => {
+      //   // console.log('BEFORE SPLICE', prev);
+      //   // // const modPrev = prev.splice(currBucket, 1);
+      //   // await buckets.existing()
+      //   // console.log('SPLICE LIST BUCKETS', modPrev);
+      //   return modPrev;
+      // })
+
+      setListBucket(newBuckList)
       listLength = listLength - 1;
       if(listLength >= 1) {
-        setCurrBucket(0);
+        await onLoadBucket(listBucket[0], 0);
       } else {
         setCurrBucket(-1);
       }
       console.log('CURRBUCKET', currBucket, listLength);
+      // console.log
       setLoading(false);
       return alert('Bucket deleted');
     }
@@ -227,6 +245,7 @@ export default function Dashboard() {
       }
       setTotalFiles(-1);
       // setOperation('');
+      
       setLoading(false);
     }
   }
@@ -253,7 +272,9 @@ export default function Dashboard() {
   const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
 
   let screen = (<div className={classes.loadContainer}>
-                    <CircularProgress size={30}/>
+                    <Backdrop className={classes.backdrop} open={loading} >
+                            <CircularProgress color="inherit" />
+                        </Backdrop>
                     {totalFiles === -1 ? <h3>Loading...</h3>: <h3 style={{marginLeft: -45,}}>{operation} {' (Remaining) : '} {totalFiles} </h3>}
                 </div>)
   if(listBucket.length === 0 && !loading) {
@@ -290,7 +311,7 @@ export default function Dashboard() {
             {/* Recent Orders */}
             <Grid item xs={12}>
               <Paper className={classes.paper}>
-                <Orders />
+              <Orders bucketKey = {listBucket[currBucket].key} buckets = {buckets}/>
               </Paper>
             </Grid>
           </Grid>
@@ -333,9 +354,14 @@ export default function Dashboard() {
         <div className={classes.toolbarIcon}>
         </div>
         <Divider />
-        <List>{mainListItems}</List>
-        <Divider />
-        <List>{secondaryListItems}</List>
+        <div className={classes.bucketListStyle}>
+          <List >
+            <BucketsList bucketList={listBucket} onLoadBucket = {onLoadBucket}/>
+          </List>
+        </div>
+				<Divider  />
+
+				<NewBucket setLoading={setLoading} buckets={buckets} bucketList={listBucket} setBucketList={setListBucket} onLoadBucket = {onLoadBucket}  />
       </Drawer>
       {screen}
     </div>
