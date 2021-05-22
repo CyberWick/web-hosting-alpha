@@ -224,7 +224,7 @@ function App() {
   if(user_data.error) {
     alert(user_data.error);
   }
-  if(!isAuth) {
+  if(!isAuth || user_data.error) {
     screen2 = (<WelcomeScreen onCheckLogin={onCheckLogin} onSignUp={onSignupClick}/>);
   } 
   if(!user_data.isLoading && !user_data.error) {

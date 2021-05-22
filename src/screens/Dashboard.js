@@ -151,7 +151,7 @@ export default function Dashboard() {
     const listBuckets = await buckets.existing();
     console.log('LIST: ', listBuckets);
     if(listBuckets.length > 0) {
-      onLoadBucket(listBuckets[0], 0);
+      await onLoadBucket(listBuckets[0], 0);
       setListBucket(prev => prev.concat(listBuckets));
     }
     // setCurrBucket(0);
