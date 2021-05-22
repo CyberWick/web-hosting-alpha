@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Title from './Title';
-import {CloudUpload, Delete, Dns, Folder, Grain, Home, Http, Language, Whatshot} from '@material-ui/icons';
-import { Box, Breadcrumbs, Button, Grid, Link, Table, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
+import {CloudUpload, Delete, Dns, Folder, Language} from '@material-ui/icons';
+import { Button, Grid, Link, Typography } from '@material-ui/core';
 import {makeStyles} from '@material-ui/core/styles';
 import Dropzone from 'react-dropzone';
-import { useSelector } from 'react-redux';
 
 const styles = makeStyles((theme) => ({
   dropZone: {
@@ -27,28 +26,6 @@ const styles = makeStyles((theme) => ({
 
 export default function Chart(props) {
   const classes = styles();
-  // const buckets = useSelector(state => state.user_data.buckets);
-  // const [links, setLinks] = useState({
-  //   www: 'Loading',
-  //   ipns: 'Loading',
-  //   url: 'Loading'
-  // });
-
-  // useEffect(() => {
-  //   onFirstLoad();
-  // }, []);
-
-  // const onFirstLoad = async() => {
-  //   const {root, threadID} = await buckets.getOrCreate(props.bucket.name);
-  //   const links = await buckets.links(root.key);
-  //   console.log('ROOT', links);
-  //   setLinks(links);
-  // }
-
-  // const onClickHandler = () => {
-  //   window.open(lin)
-  // }
-
   // console.log('CHARTS Props', props);
   return (
     <React.Fragment>

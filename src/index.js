@@ -5,11 +5,7 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { Provider } from 'react-redux';
 import store from './store/store';
-import { loadUserData } from './store/actions/userDataAction';
 
-const pk = 'bbaareqdduw5i2nsibxkizuxv4fycv6iwre4zxm66igp4e62nnnuacc3a4y4z47j26pjg7wspppr35njgv6ii6ot7k64wrvvpe57csnnsh76di'
-
-// store.dispatch(loadUserData(pk));
 ReactDOM.render(
   <React.StrictMode>
     <Provider store={store}>

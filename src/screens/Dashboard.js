@@ -19,20 +19,18 @@ import { mainListItems, secondaryListItems } from '../components/ListItems';
 import Chart from '../components/Chart';
 import Deposits from '../components/Deposits';
 import Orders from '../components/Orders';
-import { Users } from '@spacehq/users';
 import { ThreadID } from '@textile/hub';
 import { CircularProgress } from '@material-ui/core';
 import { useSelector } from 'react-redux';
 import { AccountCircle } from '@material-ui/icons';
 
-const users = new Users({ endpoint: 'wss://auth.space.storage' });
 
 function Copyright() {
   return (
     <Typography variant="body2" color="textSecondary" align="center">
       {'Copyright © '}
-      <Link color="inherit" href="https://material-ui.com/">
-        Your Website
+      <Link color="inherit" href="#">
+        G20
       </Link>{' '}
       {new Date().getFullYear()}
       {'.'}
@@ -159,7 +157,6 @@ export default function Dashboard() {
   }
 
   // TODO: Use this func on bucket change... pass bucket root and index
-
   const onLoadBucket = async(bucketRoot, index) => {
       await buckets.getOrCreate(bucketRoot.name);
       setCurrBucket(index);
@@ -178,7 +175,7 @@ export default function Dashboard() {
       return alert('No active bucket selected');
     } else {
       setLoading(true);
-      const result = await buckets.remove(listBucket[currBucket].key);
+      await buckets.remove(listBucket[currBucket].key);
       setListBucket(prev => {
         console.log('BEFORE SPLICE', prev);
         const modPrev = prev.splice(currBucket, 1);
@@ -199,7 +196,6 @@ export default function Dashboard() {
 
   const onUpdateVersion = async(files) => {
     console.log('UPDATING BUCKET', listBucket[currBucket], files);
-    let listLength = listBucket.length;
     if(currBucket === -1) {
       return alert('No bucket Selected to update!... Something went wrong!');
     } else {
@@ -217,7 +213,6 @@ export default function Dashboard() {
       setOperation('Uploading files')
       setTotalFiles(files.length);
       for (const file of files) {
-        const name = file.name;
         const num = file.path.indexOf("/");
         const file_info = {content: file.stream(), mimeType: file.type};
         const pushFile = await buckets.pushPath(listBucket[currBucket].key, file.path.substr(num+1), file_info);
@@ -233,7 +228,6 @@ export default function Dashboard() {
 
   const onModifyBucket = async(files) => {
     console.log('MODIFYING BUCKET', listBucket[currBucket], files);
-    let listLength = listBucket.length;
     if(currBucket === -1) {
       return alert('No bucket Selected to update!... Something went wrong!');
     } else {
