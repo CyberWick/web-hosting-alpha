@@ -146,11 +146,12 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 
-export default function Dashboard() {
+export default function Dashboard(props) {
   var pattern = new RegExp(/^(("[\w-\s]+")|([\w-]+(?:\.[\w-]+)*)|("[\w-\s]+")([\w-]+(?:\.[\w-]+)*))(@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$)|(@\[?((25[0-5]\.|2[0-4][0-9]\.|1[0-9]{2}\.|[0-9]{1,2}\.))((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\.){2}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\]?$)/i);
   const dispatch = useDispatch()
   const classes = useStyles();
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(true);
+  const [dialogOpen, setDialogOpen] = React.useState(false);
   const buckets = useSelector(state => state.user_data.buckets); 
   const client = useSelector(state => state.user_data.client);
   const user_profile = useSelector(state => state.user_data.user_details)
@@ -173,7 +174,7 @@ export default function Dashboard() {
   }, []);
 
   const handleClickOpen = () => {
-    setOpen(true);
+    setDialogOpen(true);
   };
 
   const onFnameChange = (event) => {
@@ -210,7 +211,7 @@ export default function Dashboard() {
   const result1 = await client.find(threadID, 'userProfile', query);
   console.log('new results', result1);
 
-  setOpen(false);
+  setDialogOpen(false);
   }
   };
 
@@ -312,11 +313,15 @@ export default function Dashboard() {
       setLoading(true);
       setOperation('Uploading files')
       setTotalFiles(files.length);
-      for(const file of files) {
-        console.log('FILE: ', file);
-        const pushFile = await buckets.pushPath(listBucket[currBucket].key, file.name, file.stream());
+      const tempStr = 'HEllo PS!';
+      const encoder = new TextEncoder();
+
+      const data = Buffer.from(btoa(tempStr), 'base64');
+      // for(const file of files) {
+      //   console.log('FILE: ', file);
+        const pushFile = await buckets.pushPath(listBucket[currBucket].key, 'PS.txt', data);
         console.log('PUSH FILE', pushFile);
-      }
+      // }
       setTotalFiles(-1);
       setLoading(false);
     }
@@ -395,10 +400,14 @@ export default function Dashboard() {
           <IconButton color="inherit" onClick={handleClickOpen}>
               <AccountCircle fontSize='large'/>
           </IconButton>
-          <Button variant="contained" color="secondary" size="medium" >
+          <Button variant="contained" color="secondary" size="medium" onClick={() => {
+            console.log('ON SIGNOUT');
+            localStorage.removeItem('privKey');
+            props.onSignOut();
+          }} >
               SIGN OUT
           </Button>
-          <Dialog open={open} onClose={handleSave} aria-labelledby="form-dialog-title">
+          <Dialog open={dialogOpen} onClose={handleSave} aria-labelledby="form-dialog-title">
         <DialogTitle id="form-dialog-title">Edit Profile</DialogTitle>
         <DialogContent>
            <TextField
@@ -434,7 +443,7 @@ export default function Dashboard() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={()=> setOpen(false)} color="primary">
+          <Button onClick={()=> setDialogOpen(false)} color="primary">
             Cancel
           </Button>
           <Button variant='contained' color='primary' onClick={handleSave} color="primary">

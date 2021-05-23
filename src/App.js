@@ -2,7 +2,7 @@ import './App.css';
 import { useEffect, useState } from 'react';
 import Dashboard from './screens/Dashboard';
 import { useDispatch, useSelector } from 'react-redux';
-import { loadUserData } from './store/actions/userDataAction';
+import { loadUserData, onUserSignOut } from './store/actions/userDataAction';
 import { CircularProgress, Button, Popover } from '@material-ui/core';
 import {reactLocalStorage} from 'reactjs-localstorage';
 import WelcomeScreen from './screens/WelcomeScreen';
@@ -28,13 +28,19 @@ function App() {
   }, [user_data])
 
   const onFirstLoad = () => {
-    reactLocalStorage.remove('privKey');
+    // reactLocalStorage.remove('privKey');
+    console.log('CHECKING FOR PTIV KEY');
     const pk = reactLocalStorage.get('privKey');
     if(pk) {
       setIsAuth(true);
       setLoadReason('Authenticating you and getting you started');
       dispatch(loadUserData(pk, false, null));
     }
+  }
+
+  const onSignOut = async() => {
+    setIsAuth(false);
+    await dispatch(onUserSignOut());
   }
 
   const onSignupClick = async(user_details) => {
@@ -99,7 +105,7 @@ function App() {
     screen2 = (
       <>
         {signUpalert}
-        <Dashboard />
+        <Dashboard onSignOut={onSignOut}/>
       </>
       )
   } 

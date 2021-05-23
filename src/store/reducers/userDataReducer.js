@@ -1,4 +1,4 @@
-import { LOAD_USER_DATA, LOAD_USER_DATA_ERROR } from "../actions/userDataAction";
+import { LOAD_USER_DATA, LOAD_USER_DATA_ERROR, ON_USER_SIGN_OUT } from "../actions/userDataAction";
 
 const initialState = {
     spaceUser: null,
@@ -28,6 +28,10 @@ const userDataReducer = (state = initialState, action) => {
                 ...state,
                 isLoading: false,
                 error: action.err,
+            }
+        case ON_USER_SIGN_OUT: 
+            return {
+               ...initialState
             }
         default: 
             return state;

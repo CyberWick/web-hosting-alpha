@@ -1,14 +1,21 @@
 import { Users } from "@spacehq/users";
-import { Buckets, Client, PrivateKey, Query } from "@textile/hub";
+import { Buckets, Client, PrivateKey, Query, ThreadID } from "@textile/hub";
 import { reactLocalStorage } from "reactjs-localstorage";
 
 export const LOAD_USER_DATA = 'LOAD_USER_DATA';
 export const LOAD_USER_DATA_ERROR = 'LOAD_USER_DATA_ERROR';
 export const LOAD_THREADID = 'LOAD_THREADID'
 export const LOAD_THREADID_ERROR = 'LOAD_THREADID_ERROR'
+export const ON_USER_SIGN_OUT = 'ON_USER_SIGN_OUT';
 
 
 const users = new Users({ endpoint: 'wss://auth.space.storage' });
+
+export const onUserSignOut = () => {
+    return {
+        type: ON_USER_SIGN_OUT
+    }
+}
 
 export const loadUserAccess = (spaceUser, buckets, client, threadID, user_details) => {
     return {
@@ -72,9 +79,19 @@ export const loadUserData = (pk, rememberMe, user_details) => {
                     const query = new Query().orderByID()
                     const result = await client.find(threadID, 'userProfile', query);
                     console.log('NEW USER ADDED TO THREADDB', result);
-
+                    dispatch(loadUserAccess(spaceUser, buckets, client,threadID, user_details));
+                } else {
+                    const threadList = await client.listDBs();
+                    console.log('DBs', threadList);
+                    const tid = threadList.filter(item => item.name === 'userDatastore');
+                    console.log('My TID: ', tid);
+                    threadID = ThreadID.fromString(tid[0].id);
+                    const query = new Query().orderByID()
+                    const result = await client.find(threadID, 'userProfile', query);
+                    console.log('RESULT: ' , result);
+                    dispatch(loadUserAccess(spaceUser, buckets, client,threadID, result[0]));
                 }
-                dispatch(loadUserAccess(spaceUser, buckets, client,threadID, user_details));
+                
             });
         } catch (err) {
             console.log('LOADING USER DATA FAILURE', err);
@@ -83,3 +100,4 @@ export const loadUserData = (pk, rememberMe, user_details) => {
 
     }
 }
+
