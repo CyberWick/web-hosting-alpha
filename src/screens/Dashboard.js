@@ -15,14 +15,26 @@ import Grid from '@material-ui/core/Grid';
 import Paper from '@material-ui/core/Paper';
 import Link from '@material-ui/core/Link';
 import MenuIcon from '@material-ui/icons/Menu';
-import { mainListItems, secondaryListItems } from '../components/ListItems';
 import Chart from '../components/Chart';
 import Deposits from '../components/Deposits';
 import Orders from '../components/Orders';
 import { ThreadID } from '@textile/hub';
 import { CircularProgress } from '@material-ui/core';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { AccountCircle } from '@material-ui/icons';
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import Button from '@material-ui/core/Button';
+import TextField from '@material-ui/core/TextField';
+import { Query } from '@textile/hub'
+import BucketsList from '../components/ListBuckets';
+
+import Backdrop from '@material-ui/core/Backdrop';
+// import CircularProgress from '@material-ui/core/CircularProgress';
+import NewBucket from '../components/newBucket.js'
 
 
 function Copyright() {
@@ -118,17 +130,31 @@ const useStyles = makeStyles((theme) => ({
     height: 240,
   },
   loadContainer: {
-    marginTop: window.innerHeight/2,
+    marginTop: window.innerHeight,
     marginLeft: (window.innerWidth-240)/2,
-  }
+    height : '100%'
+  },
+  backdrop: {
+    zIndex: theme.zIndex.drawer + 1,
+    color: '#fff',
+  },
+  bucketListStyle : {
+		"overflowY": 'auto',
+		height: '70%',
+
+	},
 }));
 
 
 export default function Dashboard() {
+  var pattern = new RegExp(/^(("[\w-\s]+")|([\w-]+(?:\.[\w-]+)*)|("[\w-\s]+")([\w-]+(?:\.[\w-]+)*))(@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$)|(@\[?((25[0-5]\.|2[0-4][0-9]\.|1[0-9]{2}\.|[0-9]{1,2}\.))((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\.){2}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\]?$)/i);
+  const dispatch = useDispatch()
   const classes = useStyles();
-  const [open, setOpen] = React.useState(true);
+  const [open, setOpen] = React.useState(false);
   const buckets = useSelector(state => state.user_data.buckets); 
   const client = useSelector(state => state.user_data.client);
+  const user_profile = useSelector(state => state.user_data.user_details)
+  const threadID = useSelector(state => state.user_data.threadID)
   const [loading, setLoading] = useState(true);
   const [links, setLinks] = useState(null);
   const [dbInfo, setDBInfo] = useState(null);
@@ -136,12 +162,58 @@ export default function Dashboard() {
   const [listBucket, setListBucket] = useState([]);
   const [totalFiles, setTotalFiles] = useState(-1);
   const [operation, setOperation] = useState('');
-
+  const [selectedBucket, setSelectedBucket] = useState('')
+  const [new_fname,setfname] = useState(user_profile.fname)
+  const [new_lname, setlname] = useState(user_profile.lname)
+  const [new_email,setemail] = useState(user_profile.emailid)
 
   useEffect(() => {
     console.log('Running useEffect');
     onLoadUser();
   }, []);
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const onFnameChange = (event) => {
+    setfname(event.target.value)
+  }
+
+  const onLnameChange = (event) => {
+    setlname(event.target.value)
+  }
+
+  const onEmailChange = (event) => {
+    setemail(event.target.value)
+  }
+
+  const handleSave = async() => {
+ 
+    if(!pattern.test(new_email))
+  {
+      alert('Wrong id')
+      setemail(user_profile.emailid)
+  }
+
+  else{
+  const query = new Query().orderByID()
+  const result = await client.find(threadID, 'userProfile', query);
+  
+
+  const new_user = result[0]
+  new_user.fname = new_fname
+  new_user.lname = new_lname
+  new_user.emailid = new_email
+  new_user._id = new_email
+  await client.save(threadID, 'userProfile', [new_user])
+  const result1 = await client.find(threadID, 'userProfile', query);
+  console.log('new results', result1);
+
+  setOpen(false);
+  }
+  };
+
 
   const onLoadUser = async() => {
     setLoading(true);
@@ -158,8 +230,8 @@ export default function Dashboard() {
 
   // TODO: Use this func on bucket change... pass bucket root and index
   const onLoadBucket = async(bucketRoot, index) => {
+      setCurrBucket(index);  
       await buckets.getOrCreate(bucketRoot.name);
-      setCurrBucket(index);
       const inLinks = await buckets.links(bucketRoot.key);
       console.log('CLIENT', client);
       const genThread = ThreadID.fromString(bucketRoot.thread);
@@ -175,20 +247,25 @@ export default function Dashboard() {
       return alert('No active bucket selected');
     } else {
       setLoading(true);
-      await buckets.remove(listBucket[currBucket].key);
-      setListBucket(prev => {
-        console.log('BEFORE SPLICE', prev);
-        const modPrev = prev.splice(currBucket, 1);
-        console.log('SPLICE LIST BUCKETS', modPrev);
-        return modPrev;
-      })
+      const result = await buckets.remove(listBucket[currBucket].key);
+      const newBuckList = await buckets.existing()
+      // setListBucket(prev => {
+      //   // console.log('BEFORE SPLICE', prev);
+      //   // // const modPrev = prev.splice(currBucket, 1);
+      //   // await buckets.existing()
+      //   // console.log('SPLICE LIST BUCKETS', modPrev);
+      //   return modPrev;
+      // })
+
+      setListBucket(newBuckList)
       listLength = listLength - 1;
       if(listLength >= 1) {
-        setCurrBucket(0);
+        await onLoadBucket(listBucket[0], 0);
       } else {
         setCurrBucket(-1);
       }
       console.log('CURRBUCKET', currBucket, listLength);
+      // console.log
       setLoading(false);
       return alert('Bucket deleted');
     }
@@ -222,6 +299,7 @@ export default function Dashboard() {
       }
       setTotalFiles(-1);
       // setOperation('');
+      
       setLoading(false);
     }
   }
@@ -247,7 +325,9 @@ export default function Dashboard() {
   const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
 
   let screen = (<div className={classes.loadContainer}>
-                    <CircularProgress size={30}/>
+                    <Backdrop className={classes.backdrop} open={loading} >
+                            <CircularProgress color="inherit" />
+                        </Backdrop>
                     {totalFiles === -1 ? <h3>Loading...</h3>: <h3 style={{marginLeft: -45,}}>{operation} {' (Remaining) : '} {totalFiles} </h3>}
                 </div>)
   if(listBucket.length === 0 && !loading) {
@@ -284,7 +364,7 @@ export default function Dashboard() {
             {/* Recent Orders */}
             <Grid item xs={12}>
               <Paper className={classes.paper}>
-                <Orders />
+              <Orders bucketKey = {listBucket[currBucket].key} buckets = {buckets}/>
               </Paper>
             </Grid>
           </Grid>
@@ -312,9 +392,56 @@ export default function Dashboard() {
           <Typography component="h1" variant="h6" color="inherit" noWrap className={classes.title}>
             Dashboard
           </Typography>
-          <IconButton color="inherit">
+          <IconButton color="inherit" onClick={handleClickOpen}>
               <AccountCircle fontSize='large'/>
           </IconButton>
+          <Button variant="contained" color="secondary" size="medium" >
+              SIGN OUT
+          </Button>
+          <Dialog open={open} onClose={handleSave} aria-labelledby="form-dialog-title">
+        <DialogTitle id="form-dialog-title">Edit Profile</DialogTitle>
+        <DialogContent>
+           <TextField
+            autoFocus
+            margin="dense"
+            id="name"
+            label="First Name"
+            fullWidth
+            value={new_fname}
+            onChange={(e) => onFnameChange(e)}
+          /> 
+          
+          <TextField
+            autoFocus
+            margin="dense"
+            id="name"
+            label="Last Name"
+            type="email"
+            fullWidth
+            value={new_lname}
+            onChange={(e) => onLnameChange(e)}
+          />
+          <TextField
+            autoFocus
+            margin="dense"
+            id="name"
+            label="Email Address"
+            type="email"
+            fullWidth
+            value={new_email}
+            onChange={(e) => onEmailChange(e)}
+
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={()=> setOpen(false)} color="primary">
+            Cancel
+          </Button>
+          <Button variant='contained' color='primary' onClick={handleSave} color="primary">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
         </Toolbar>
       </AppBar>
       <Drawer
@@ -327,9 +454,14 @@ export default function Dashboard() {
         <div className={classes.toolbarIcon}>
         </div>
         <Divider />
-        <List>{mainListItems}</List>
-        <Divider />
-        <List>{secondaryListItems}</List>
+        <div className={classes.bucketListStyle}>
+          <List >
+            <BucketsList bucketList={listBucket} onLoadBucket = {onLoadBucket}/>
+          </List>
+        </div>
+				<Divider  />
+
+				<NewBucket setLoading={setLoading} buckets={buckets} bucketList={listBucket} setBucketList={setListBucket} onLoadBucket = {onLoadBucket}  />
       </Drawer>
       {screen}
     </div>

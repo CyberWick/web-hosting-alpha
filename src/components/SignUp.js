@@ -39,7 +39,7 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.palette.secondary.main,
   },
   form: {
-    width: '100%', // Fix IE 11 issue.
+    width: '100%', 
     marginTop: theme.spacing(3),
   },
   submit: {
@@ -48,8 +48,23 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const SignUp = (props) => {
+  var pattern = new RegExp(/^(("[\w-\s]+")|([\w-]+(?:\.[\w-]+)*)|("[\w-\s]+")([\w-]+(?:\.[\w-]+)*))(@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$)|(@\[?((25[0-5]\.|2[0-4][0-9]\.|1[0-9]{2}\.|[0-9]{1,2}\.))((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\.){2}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\]?$)/i);
   const classes = useStyles();
+  const [fname,setfname] = useState('')
+  const[lname,setlname] = useState('')
+  const[emailid,setemailid] = useState('') 
 
+  const onChangefname = (event) => {
+    setfname(event.target.value)
+  }
+
+  const onChangelname = (event) => {
+    setlname(event.target.value)
+  }
+
+  const onChangeemail = (event) => {
+    setemailid(event.target.value)
+  }
 
   return (
     <Container component="main" maxWidth="xs">
@@ -73,6 +88,8 @@ const SignUp = (props) => {
                 id="firstName"
                 label="First Name"
                 autoFocus
+                value={fname}
+                onChange={(e) => onChangefname(e)}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -84,6 +101,8 @@ const SignUp = (props) => {
                 label="Last Name"
                 name="lastName"
                 autoComplete="lname"
+                value={lname}
+                onChange={(e) => onChangelname(e)}
               />
             </Grid>
             <Grid item xs={12}>
@@ -95,20 +114,10 @@ const SignUp = (props) => {
                 label="Email Address"
                 name="email"
                 autoComplete="email"
+                value={emailid}
+                onChange={(e) => onChangeemail(e)}
               />
             </Grid>
-            {/* <Grid item xs={12}>
-              <TextField
-                variant="outlined"
-                required
-                fullWidth
-                name="password"
-                label="Password"
-                type="password"
-                id="password"
-                autoComplete="current-password"
-              />
-            </Grid> */}
             <Grid item xs={12}>
               <FormControlLabel
                 control={<Checkbox value="allowExtraEmails" color="primary" />}
@@ -122,7 +131,19 @@ const SignUp = (props) => {
             variant="contained"
             color="primary"
             className={classes.submit}
-            onClick={props.onSignUp}
+            onClick={() => {
+              if(!pattern.test(emailid))
+                alert('Please enter valid Email Id')
+
+              else{
+                props.onSignUp({
+                fname: fname,
+                lname: lname,
+                emailid: emailid,
+                _id: emailid
+              })
+            } 
+          }}
           >
             Sign Up
           </Button>

@@ -4,6 +4,8 @@ const initialState = {
     spaceUser: null,
     buckets: null,
     client: null,
+    threadID: null,
+    user_details: null,
     error: null,
     isLoading: true,
 }
@@ -16,6 +18,8 @@ const userDataReducer = (state = initialState, action) => {
                 spaceUser: action.spaceUser,
                 buckets: action.buckets,
                 client: action.client,
+                threadID: action.threadID,
+                user_details: action.user_details,
                 isLoading: false,
                 error: null,
             }

@@ -28,21 +28,24 @@ function App() {
   }, [user_data])
 
   const onFirstLoad = () => {
+    reactLocalStorage.remove('privKey');
     const pk = reactLocalStorage.get('privKey');
     if(pk) {
       setIsAuth(true);
       setLoadReason('Authenticating you and getting you started');
-      dispatch(loadUserData(pk, false));
+      dispatch(loadUserData(pk, false, null));
     }
   }
 
-  const onSignupClick = async() => {
+  const onSignupClick = async(user_details) => {
     console.log('IN SIGN UP FUNC');
     setLoadReason('Creating new account and getting you started');
     const identity = await users.createIdentity();
     const pk = identity.toString();
     console.log('SIGNUP ID: ', pk);
-    dispatch(loadUserData(pk, true));
+    console.log('USER DETAILS', user_details)
+    dispatch(loadUserData(pk, true, user_details));
+    // reactLocalStorage.set('privKey', identity.toString());
     const element = document.createElement("a");
     const file = new Blob([identity.toString()], {type: 'text/plain'});
     element.href = URL.createObjectURL(file);
