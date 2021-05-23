@@ -21,9 +21,16 @@ import Orders from '../components/Orders';
 import { Users } from '@spacehq/users';
 import { ThreadID } from '@textile/hub';
 import { CircularProgress } from '@material-ui/core';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { AccountCircle } from '@material-ui/icons';
-
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import Button from '@material-ui/core/Button';
+import TextField from '@material-ui/core/TextField';
+import { Query } from '@textile/hub'
 import BucketsList from '../components/ListBuckets';
 
 import Backdrop from '@material-ui/core/Backdrop';
@@ -140,10 +147,14 @@ const useStyles = makeStyles((theme) => ({
 
 
 export default function Dashboard() {
+  var pattern = new RegExp(/^(("[\w-\s]+")|([\w-]+(?:\.[\w-]+)*)|("[\w-\s]+")([\w-]+(?:\.[\w-]+)*))(@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$)|(@\[?((25[0-5]\.|2[0-4][0-9]\.|1[0-9]{2}\.|[0-9]{1,2}\.))((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\.){2}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\]?$)/i);
+  const dispatch = useDispatch()
   const classes = useStyles();
-  const [open, setOpen] = React.useState(true);
+  const [open, setOpen] = React.useState(false);
   const buckets = useSelector(state => state.user_data.buckets); 
   const client = useSelector(state => state.user_data.client);
+  const user_profile = useSelector(state => state.user_data.user_details)
+  const threadID = useSelector(state => state.user_data.threadID)
   const [loading, setLoading] = useState(true);
   const [links, setLinks] = useState(null);
   const [dbInfo, setDBInfo] = useState(null);
@@ -152,11 +163,57 @@ export default function Dashboard() {
   const [totalFiles, setTotalFiles] = useState(-1);
   const [operation, setOperation] = useState('');
   const [selectedBucket, setSelectedBucket] = useState('')
+  const [new_fname,setfname] = useState(user_profile.fname)
+  const [new_lname, setlname] = useState(user_profile.lname)
+  const [new_email,setemail] = useState(user_profile.emailid)
 
   useEffect(() => {
     console.log('Running useEffect');
     onLoadUser();
   }, []);
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const onFnameChange = (event) => {
+    setfname(event.target.value)
+  }
+
+  const onLnameChange = (event) => {
+    setlname(event.target.value)
+  }
+
+  const onEmailChange = (event) => {
+    setemail(event.target.value)
+  }
+
+  const handleSave = async() => {
+ 
+    if(!pattern.test(new_email))
+  {
+      alert('Wrong id')
+      setemail(user_profile.emailid)
+  }
+
+  else{
+  const query = new Query().orderByID()
+  const result = await client.find(threadID, 'userProfile', query);
+  
+
+  const new_user = result[0]
+  new_user.fname = new_fname
+  new_user.lname = new_lname
+  new_user.emailid = new_email
+  new_user._id = new_email
+  await client.save(threadID, 'userProfile', [new_user])
+  const result1 = await client.find(threadID, 'userProfile', query);
+  console.log('new results', result1);
+
+  setOpen(false);
+  }
+  };
+
 
   const onLoadUser = async() => {
     setLoading(true);
@@ -339,9 +396,56 @@ export default function Dashboard() {
           <Typography component="h1" variant="h6" color="inherit" noWrap className={classes.title}>
             Dashboard
           </Typography>
-          <IconButton color="inherit">
+          <IconButton color="inherit" onClick={handleClickOpen}>
               <AccountCircle fontSize='large'/>
           </IconButton>
+          <Button variant="contained" color="secondary" size="medium" >
+              SIGN OUT
+          </Button>
+          <Dialog open={open} onClose={handleSave} aria-labelledby="form-dialog-title">
+        <DialogTitle id="form-dialog-title">Edit Profile</DialogTitle>
+        <DialogContent>
+           <TextField
+            autoFocus
+            margin="dense"
+            id="name"
+            label="First Name"
+            fullWidth
+            value={new_fname}
+            onChange={(e) => onFnameChange(e)}
+          /> 
+          
+          <TextField
+            autoFocus
+            margin="dense"
+            id="name"
+            label="Last Name"
+            type="email"
+            fullWidth
+            value={new_lname}
+            onChange={(e) => onLnameChange(e)}
+          />
+          <TextField
+            autoFocus
+            margin="dense"
+            id="name"
+            label="Email Address"
+            type="email"
+            fullWidth
+            value={new_email}
+            onChange={(e) => onEmailChange(e)}
+
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={()=> setOpen(false)} color="primary">
+            Cancel
+          </Button>
+          <Button variant='contained' color='primary' onClick={handleSave} color="primary">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
         </Toolbar>
       </AppBar>
       <Drawer
