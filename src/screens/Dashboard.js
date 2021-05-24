@@ -31,7 +31,7 @@ import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
 import { Query } from '@textile/hub'
 import BucketsList from '../components/ListBuckets';
-
+import Title from '../components/Title'
 import Backdrop from '@material-ui/core/Backdrop';
 // import CircularProgress from '@material-ui/core/CircularProgress';
 import NewBucket from '../components/newBucket.js'
@@ -62,8 +62,8 @@ const useStyles = makeStyles((theme) => ({
   toolbarIcon: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    padding: '0 8px',
+    padding: '0px 8px',
+    
     ...theme.mixins.toolbar,
   },
   appBar: {
@@ -132,11 +132,19 @@ const useStyles = makeStyles((theme) => ({
   loadContainer: {
     marginTop: window.innerHeight,
     marginLeft: (window.innerWidth-240)/2,
+    // textAlign: 'center',
+    height : '100%'
+  },
+  loadEmptyContainer: {
+    marginTop: (window.innerHeight)/2,
+   // marginLeft: (window.innerWidth-240)/2,
+   textAlign: 'center',
     height : '100%'
   },
   backdrop: {
     zIndex: theme.zIndex.drawer + 1,
     color: '#fff',
+    textAlign:'center'
   },
   bucketListStyle : {
 		"overflowY": 'auto',
@@ -299,7 +307,7 @@ export default function Dashboard(props) {
         //TODO: Clear all the previous files and overwrite the new added files.
       }
       setTotalFiles(-1);
-      // setOperation('');
+      setOperation('');
       
       setLoading(false);
     }
@@ -332,14 +340,23 @@ export default function Dashboard(props) {
   let screen = (<div className={classes.loadContainer}>
                     <Backdrop className={classes.backdrop} open={loading} >
                             <CircularProgress color="inherit" />
+                            
                         </Backdrop>
-                    {totalFiles === -1 ? <h3>Loading...</h3>: <h3 style={{marginLeft: -45,}}>{operation} {' (Remaining) : '} {totalFiles} </h3>}
+                        <div>
+                            {totalFiles === -1 ? <h3 style={{marginLeft: -150,marginTop: -300,}} >Loading...</h3>: <h3 style={{marginTop: -300,marginLeft: -200,}}>{operation} {' (Remaining) : '} {totalFiles} </h3>}
+                          </div>
+                   
                 </div>)
   if(listBucket.length === 0 && !loading) {
     screen = (
-      <div className={classes.loadContainer}>
+      <main className={classes.content}>
+      <div className={classes.appBarSpacer} />
+      <Container maxWidth="lg" className={classes.container}>
+      <div className={classes.loadEmptyContainer}>
         <h3>No Bucket created... Add from side Bar</h3>
       </div>
+      </Container>
+      </main> 
     )
   }
   if(!loading && listBucket.length >= 1) {
@@ -357,7 +374,8 @@ export default function Dashboard(props) {
                   links={links}
                   onDelete={onDeleteBucket}
                   onUpdate={onUpdateVersion}
-                  onModify={onModifyBucket}/>
+                  // onModify={onModifyBucket}
+                  />
               </Paper>
             </Grid>
             {/* Recent Deposits */}
@@ -373,9 +391,9 @@ export default function Dashboard(props) {
               </Paper>
             </Grid>
           </Grid>
-          <Box pt={4}>
+          {/* <Box pt={4}>
             <Copyright />
-          </Box>
+          </Box> */}
         </Container>
       </main> 
       )
@@ -385,15 +403,17 @@ export default function Dashboard(props) {
     <div className={classes.root}>
       <CssBaseline />
       <AppBar position="absolute" className={clsx(classes.appBar, open && classes.appBarShift)}>
+       
         <Toolbar className={classes.toolbar}>
-          <IconButton
+          {/* <IconButton
             edge="start"
             color="inherit"
             aria-label="open drawer"
             className={clsx(classes.menuButton, open && classes.menuButtonHidden)}
           >
             <MenuIcon />
-          </IconButton>
+          </IconButton> */}
+          
           <Typography component="h1" variant="h6" color="inherit" noWrap className={classes.title}>
             Dashboard
           </Typography>
@@ -461,7 +481,10 @@ export default function Dashboard(props) {
         open={open}
       >
         <div className={classes.toolbarIcon}>
+          
+          <Title>YOUR SITES</Title>
         </div>
+        
         <Divider />
         <div className={classes.bucketListStyle}>
           <List >
