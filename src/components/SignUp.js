@@ -29,18 +29,32 @@ function Copyright() {
 
 const useStyles = makeStyles((theme) => ({
   paper: {
-    marginTop: theme.spacing(8),
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
+    // marginLef
+    // justifyContent: '',
+  },
+  inPaper: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: theme.spacing(8),
+    backgroundColor: 'white',
+    borderRadius: 10,
+    opacity: 0.9,
+    width: window.innerWidth/4,
   },
   avatar: {
+    marginTop: theme.spacing(8),
     margin: theme.spacing(1),
     backgroundColor: theme.palette.secondary.main,
   },
   form: {
-    width: '100%', 
+    width: '80%', 
     marginTop: theme.spacing(3),
+    marginBottom: theme.spacing(8),
   },
   submit: {
     margin: theme.spacing(3, 0, 2),
@@ -70,6 +84,7 @@ const SignUp = (props) => {
     <Container component="main" maxWidth="xs">
       <CssBaseline />
       <div className={classes.paper}>
+        <div className={classes.inPaper}>
         <Avatar className={classes.avatar}>
           <LockOutlinedIcon />
         </Avatar>
@@ -118,12 +133,6 @@ const SignUp = (props) => {
                 onChange={(e) => onChangeemail(e)}
               />
             </Grid>
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={<Checkbox value="allowExtraEmails" color="primary" />}
-                label="I want to receive inspiration, marketing promotions and updates via email."
-              />
-            </Grid>
           </Grid>
           <Button
             type="submit"
@@ -155,10 +164,11 @@ const SignUp = (props) => {
             </Grid>
           </Grid>
         </form>
+        </div>
       </div>
-      <Box mt={5}>
+      {/* <Box mt={5}>
         <Copyright />
-      </Box>
+      </Box> */}
     </Container>
   );
 }

@@ -86,7 +86,7 @@ export const loadUserData = (pk, rememberMe, user_details) => {
                     const tid = threadList.filter(item => item.name === 'userDatastore');
                     console.log('My TID: ', tid);
                     threadID = ThreadID.fromString(tid[0].id);
-                    const query = new Query().orderByID()
+                    const query = new Query().orderByID()   
                     const result = await client.find(threadID, 'userProfile', query);
                     console.log('RESULT: ' , result);
                     dispatch(loadUserAccess(spaceUser, buckets, client,threadID, result[0]));

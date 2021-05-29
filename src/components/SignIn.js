@@ -35,13 +35,26 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'column',
     alignItems: 'center',
   },
+  inPaper: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: theme.spacing(8),
+    backgroundColor: 'white',
+    borderRadius: 10,
+    opacity: 0.9,
+    width: window.innerWidth/4,
+  },
   avatar: {
+    marginTop: theme.spacing(8),
     margin: theme.spacing(1),
     backgroundColor: theme.palette.secondary.main,
   },
   form: {
-    width: '100%', // Fix IE 11 issue.
+    width: '80%', // Fix IE 11 issue.
     marginTop: theme.spacing(1),
+    marginBottom: theme.spacing(8),
   },
   submit: {
     margin: theme.spacing(3, 0, 2),
@@ -86,6 +99,7 @@ export default function SignIn(props) {
     <Container component="main" maxWidth="xs">
       <CssBaseline />
       <div className={classes.paper}>
+        <div className={classes.inPaper}>
         <Avatar className={classes.avatar}>
           <LockOutlinedIcon />
         </Avatar>
@@ -146,10 +160,11 @@ export default function SignIn(props) {
             </Grid>
           </Grid>
         </form>
+        </div>
       </div>
-      <Box mt={8}>
+      {/* <Box mt={8}>
         <Copyright />
-      </Box>
+      </Box> */}
     </Container>
   );
 }

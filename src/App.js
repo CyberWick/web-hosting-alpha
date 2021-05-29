@@ -8,7 +8,10 @@ import {reactLocalStorage} from 'reactjs-localstorage';
 import WelcomeScreen from './screens/WelcomeScreen';
 import { Users } from '@spacehq/users';
 import { Alert, AlertTitle } from '@material-ui/lab';
+import { Route, Switch} from 'react-router';
+import About from './screens/About';
 //Key:
+//bbaareqbndax2jjg4khd4kpl5wkig2kpr734motqd7lhlvcips6xkiuzhtumjok26hdurmsoie77prn6ywttrjwkzurivcp75pmjia6nyt37aa
 // const pk = "bbaareqdduw5i2nsibxkizuxv4fycv6iwre4zxm66igp4e62nnnuacc3a4y4z47j26pjg7wspppr35njgv6ii6ot7k64wrvvpe57csnnsh76di"
 const users = new Users({ endpoint: 'wss://auth.space.storage' });
 
@@ -40,7 +43,7 @@ function App() {
 
   const onSignOut = async() => {
     setIsAuth(false);
-    await dispatch(onUserSignOut());
+    dispatch(onUserSignOut());
   }
 
   const onSignupClick = async(user_details) => {
@@ -111,7 +114,11 @@ function App() {
   } 
   return (
     <div>
-      {screen2}
+      <Switch>
+        <Route path='/' exact render={() => <>{screen2}</> } />
+        <Route path='/about' exact render={() => <><About /></> } />
+      </Switch>
+      {/* {screen2} */}
     </div>
   );
 }

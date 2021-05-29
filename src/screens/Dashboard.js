@@ -232,10 +232,11 @@ export default function Dashboard(props) {
   // TODO: Use this func on bucket change... pass bucket root and index
   const onLoadBucket = async(bucketRoot, index) => {
       setCurrBucket(index);  
-      await buckets.getOrCreate(bucketRoot.name);
+      // await buckets.getOrCreate(bucketRoot.name);
       const inLinks = await buckets.links(bucketRoot.key);
       console.log('CLIENT', client);
       const genThread = ThreadID.fromString(bucketRoot.thread);
+      // ThreadID.
       const DBInfo = await client.getDBInfo(genThread);
       setDBInfo(DBInfo);
       setLinks(inLinks);
