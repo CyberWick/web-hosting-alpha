@@ -1,6 +1,6 @@
 import React from 'react';
 import Title from './Title';
-import {CloudUpload, Delete, Dns, Folder, Language} from '@material-ui/icons';
+import {CloudUpload, Delete, Dns, Folder, Language, AccountTree} from '@material-ui/icons';
 import { Button, Grid, Link, Typography } from '@material-ui/core';
 import {makeStyles} from '@material-ui/core/styles';
 import Dropzone from 'react-dropzone';
@@ -74,12 +74,12 @@ export default function Chart(props) {
                 variant='button'
                 style={{fontSize: 20}} 
                 onClick={() => {
-                  window.open(props.links.url, '_blank').focus();
+                  window.open("https://explore.ipld.io/#/explore"+props.explore, '_blank').focus();
                 }}
                 className={classes.link}
               >
-                <Folder className={classes.icon} />
-                URL (BUCKET Link)
+                <AccountTree className={classes.icon} />
+                Visualize Chunks 
               </Link>
             </Grid>
           </Grid>

@@ -176,6 +176,7 @@ export default function Dashboard(props) {
   const [new_lname, setlname] = useState(user_profile.lname)
   const [new_email,setemail] = useState(user_profile.emailid)
 
+  const [explore, setExplore] = useState("");
   useEffect(() => {
     console.log('Running useEffect');
     onLoadUser();
@@ -240,11 +241,13 @@ export default function Dashboard(props) {
   // TODO: Use this func on bucket change... pass bucket root and index
   const onLoadBucket = async(bucketRoot, index) => {
       setCurrBucket(index);  
-      await buckets.getOrCreate(bucketRoot.name);
+      // await buckets.getOrCreate(bucketRoot.name);
       const inLinks = await buckets.links(bucketRoot.key);
+      console.log("links", inLinks)
       console.log('CLIENT', client);
       const genThread = ThreadID.fromString(bucketRoot.thread);
       const DBInfo = await client.getDBInfo(genThread);
+      setExplore(bucketRoot.path)
       setDBInfo(DBInfo);
       setLinks(inLinks);
   }
@@ -306,6 +309,8 @@ export default function Dashboard(props) {
         setTotalFiles(prev => (prev-1));
         //TODO: Clear all the previous files and overwrite the new added files.
       }
+      const root = await buckets.root(listBucket[currBucket].key)
+      setExplore(root.path)
       setTotalFiles(-1);
       setOperation('');
       
@@ -360,7 +365,7 @@ export default function Dashboard(props) {
     )
   }
   if(!loading && listBucket.length >= 1) {
-      console.log('LIST BUCKETS', listBucket[currBucket]);
+      // console.log('LIST BUCKETS', listBucket[currBucket]);
       screen = (
         <main className={classes.content}>
         <div className={classes.appBarSpacer} />
@@ -372,6 +377,7 @@ export default function Dashboard(props) {
                 <Chart 
                   bucket={listBucket[currBucket]}
                   links={links}
+                  explore={explore}
                   onDelete={onDeleteBucket}
                   onUpdate={onUpdateVersion}
                   // onModify={onModifyBucket}
@@ -387,7 +393,7 @@ export default function Dashboard(props) {
             {/* Recent Orders */}
             <Grid item xs={12}>
               <Paper className={classes.paper}>
-              <Orders bucketKey = {listBucket[currBucket].key} buckets = {buckets}/>
+              <Orders bucketKey = {listBucket[currBucket].key} buckets = {buckets} setExplore={setExplore}/>
               </Paper>
             </Grid>
           </Grid>

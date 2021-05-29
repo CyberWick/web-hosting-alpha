@@ -8,7 +8,6 @@ const BucketsList = (props) => {
 	let buckets = null;
 	if (props.bucketList){
 		
-		console.log("In bucks", props.bucketList)
 		buckets = (
 			<div>
 			{	
