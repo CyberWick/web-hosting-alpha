@@ -66,7 +66,7 @@ const NewBucket = (props) => {
         // }
         props.setLoading(true);
         setOpen(false);
-        const {root, threadID} = await props.buckets.getOrCreate(title);
+        let {root, threadID} = await props.buckets.getOrCreate(title);
         const buck_links = await props.buckets.links(root.key, '');
         // setBucketName(currState => { return {...currState, links: buck_links}});
         const path = '';
@@ -81,8 +81,10 @@ const NewBucket = (props) => {
         }
         
         let newBucketList = [...props.bucketList]
+        root = await props.buckets.root(root.key)
         newBucketList.push(root)
         props.setBucketList(newBucketList)
+        console.log("root", root)
         await props.onLoadBucket(root, newBucketList.length-1)
         setTitle('')
         props.setLoading(false);

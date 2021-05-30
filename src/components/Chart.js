@@ -4,7 +4,7 @@ import {CloudUpload, Delete, Dns, Folder, Language, AccountTree} from '@material
 import { Button, Grid, Link, Typography } from '@material-ui/core';
 import {makeStyles} from '@material-ui/core/styles';
 import Dropzone from 'react-dropzone';
-
+import clsx from 'clsx';
 const styles = makeStyles((theme) => ({
   dropZone: {
     textAlign: 'center',
@@ -22,10 +22,15 @@ const styles = makeStyles((theme) => ({
     width: 30,
     height: 30,
   },
+  hideModifyButtons: {
+    // visibility: 'hidden',
+    display: 'none'
+  },
 }));
 
 export default function Chart(props) {
   const classes = styles();
+  // console.log("chart", props.bucket);
   // console.log('CHARTS Props', props);
   return (
     <React.Fragment>
@@ -83,7 +88,9 @@ export default function Chart(props) {
               </Link>
             </Grid>
           </Grid>
+          
           <Grid 
+            className={clsx( (props.isSharedSelected === true) && classes.hideModifyButtons)} 
             item container xs={12} sm={3} 
             // style={{backgroundColor: '}} 
             direction='column'
@@ -125,21 +132,6 @@ export default function Chart(props) {
                 )}
               </Dropzone>
             </Grid>
-            {/* <Grid item>
-            <Dropzone onDrop={props.onModify}>
-            {({ getRootProps, getInputProps }) => (
-              <div {...getRootProps()}>
-                <input {...getInputProps()} type='file'/>
-                <Button 
-                  variant="contained"
-                  color='primary'
-                  startIcon={<Delete />}>
-                  MODIFY SITE
-                </Button>
-              </div>
-              )}
-            </Dropzone>
-            </Grid> */}
           </Grid>
       </Grid>
            </React.Fragment>

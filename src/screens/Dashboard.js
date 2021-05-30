@@ -33,9 +33,8 @@ import { Query } from '@textile/hub'
 import BucketsList from '../components/ListBuckets';
 import Title from '../components/Title'
 import Backdrop from '@material-ui/core/Backdrop';
-// import CircularProgress from '@material-ui/core/CircularProgress';
-import NewBucket from '../components/newBucket.js'
-
+import NewBucket from '../components/newBucket.js';
+import ListSharedBuckets from '../components/ListSharedBuckets.js';
 
 function Copyright() {
   return (
@@ -148,9 +147,15 @@ const useStyles = makeStyles((theme) => ({
   },
   bucketListStyle : {
 		"overflowY": 'auto',
-		height: '70%',
+		maxHeight: '70%',
 
 	},
+  hideList: {
+    display: 'none'
+  },
+  allListDrawer:{
+    height: '70%',
+  }
 }));
 
 
@@ -175,8 +180,12 @@ export default function Dashboard(props) {
   const [new_fname,setfname] = useState(user_profile.fname)
   const [new_lname, setlname] = useState(user_profile.lname)
   const [new_email,setemail] = useState(user_profile.emailid)
-
+  const [sharedListBucket, setSharedListBucket] = useState([]);
+  const [isSharedSelected, setIsSharedSeleted] = useState(false);
+  const [currSharedBucket, setCurrSharedBucket] = useState(-1);
+  const [sharedBucketMetaData, setSharedBucketMetaData] = useState([]);
   const [explore, setExplore] = useState("");
+  
   useEffect(() => {
     console.log('Running useEffect');
     onLoadUser();
@@ -201,53 +210,80 @@ export default function Dashboard(props) {
   const handleSave = async() => {
  
     if(!pattern.test(new_email))
-  {
-      alert('Wrong id')
-      setemail(user_profile.emailid)
-  }
+    {
+        alert('Wrong id')
+        setemail(user_profile.emailid)
+    }
 
-  else{
-  const query = new Query().orderByID()
-  const result = await client.find(threadID, 'userProfile', query);
-  
+    else{
+      const query = new Query().orderByID()
+      const result = await client.find(threadID, 'userProfile', query);
+      const new_user = result[0]
+      new_user.fname = new_fname
+      new_user.lname = new_lname
+      new_user.emailid = new_email
+      new_user._id = new_email
+      await client.save(threadID, 'userProfile', [new_user])
+      const result1 = await client.find(threadID, 'userProfile', query);
+      console.log('new results', result1);
 
-  const new_user = result[0]
-  new_user.fname = new_fname
-  new_user.lname = new_lname
-  new_user.emailid = new_email
-  new_user._id = new_email
-  await client.save(threadID, 'userProfile', [new_user])
-  const result1 = await client.find(threadID, 'userProfile', query);
-  console.log('new results', result1);
-
-  setDialogOpen(false);
-  }
+      setDialogOpen(false);
+    }
   };
 
 
   const onLoadUser = async() => {
     setLoading(true);
-    // const firstBucket = await buckets.getOrCreate('personal');
+
+    // TODO: Add Fetch for shared buckets
+
+    let tempSharedList=[];
+    if(sharedBucketMetaData.length>=1){
+      sharedBucketMetaData.map(async(sharedMetatData, index)=>{
+        await buckets.withThread(sharedMetatData.threadID);
+        const root = await buckets.root(sharedMetatData.bucketKey);
+        tempSharedList.push(root);
+      });
+      setSharedListBucket(tempSharedList);
+    }
+
     const listBuckets = await buckets.existing();
     console.log('LIST: ', listBuckets);
     if(listBuckets.length > 0) {
       await onLoadBucket(listBuckets[0], 0);
       setListBucket(prev => prev.concat(listBuckets));
     }
+
     // setCurrBucket(0);
     setLoading(false);
   }
 
-  // TODO: Use this func on bucket change... pass bucket root and index
+
+  const onSharedLoadBucket = async(bucketRoot, index) => {
+    setCurrBucket(index);
+    await buckets.withThread(sharedBucketMetaData[index].threadID);
+    const inLinks = await buckets.links(bucketRoot.key);
+    console.log("links", inLinks);
+    console.log('CLIENT', client);
+    const genThread = ThreadID.fromString(bucketRoot.thread);
+    const DBInfo = await client.getDBInfo(genThread);
+    setExplore(bucketRoot.path)
+    console.log("explore", explore)
+    setDBInfo(DBInfo);
+    setLinks(inLinks);
+  }
+
   const onLoadBucket = async(bucketRoot, index) => {
+      // await buckets.withThread(threadID)
       setCurrBucket(index);  
       // await buckets.getOrCreate(bucketRoot.name);
       const inLinks = await buckets.links(bucketRoot.key);
-      console.log("links", inLinks)
+      console.log("links", inLinks);
       console.log('CLIENT', client);
       const genThread = ThreadID.fromString(bucketRoot.thread);
       const DBInfo = await client.getDBInfo(genThread);
       setExplore(bucketRoot.path)
+      console.log("explore", explore)
       setDBInfo(DBInfo);
       setLinks(inLinks);
   }
@@ -261,14 +297,7 @@ export default function Dashboard(props) {
       setLoading(true);
       const result = await buckets.remove(listBucket[currBucket].key);
       const newBuckList = await buckets.existing()
-      // setListBucket(prev => {
-      //   // console.log('BEFORE SPLICE', prev);
-      //   // // const modPrev = prev.splice(currBucket, 1);
-      //   // await buckets.existing()
-      //   // console.log('SPLICE LIST BUCKETS', modPrev);
-      //   return modPrev;
-      // })
-
+      
       setListBucket(newBuckList)
       listLength = listLength - 1;
       if(listLength >= 1) {
@@ -340,6 +369,29 @@ export default function Dashboard(props) {
     }
   }
 
+  const changeListTypeHelper = async(newIsSharedSelected)=>{
+    if(isSharedSelected === newIsSharedSelected){
+      return;
+    }
+    setLoading(true)
+    setIsSharedSeleted(newIsSharedSelected);
+    if (newIsSharedSelected){
+        if(sharedListBucket.length>=1){
+          await onSharedLoadBucket(sharedListBucket[0], 0);
+        } else {
+          setCurrSharedBucket(-1);
+        }
+    }
+    else{
+      if(listBucket.length >= 1) {
+        await onLoadBucket(listBucket[0], 0);
+      } else {
+        setCurrBucket(-1);
+      }
+    }
+   
+    setLoading(false)
+  }
   const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
 
   let screen = (<div className={classes.loadContainer}>
@@ -352,19 +404,19 @@ export default function Dashboard(props) {
                           </div>
                    
                 </div>)
-  if(listBucket.length === 0 && !loading) {
+  if(((isSharedSelected===false && listBucket.length === 0) || (isSharedSelected && sharedListBucket.length===0)) && !loading) {
     screen = (
       <main className={classes.content}>
       <div className={classes.appBarSpacer} />
       <Container maxWidth="lg" className={classes.container}>
       <div className={classes.loadEmptyContainer}>
-        <h3>No Bucket created... Add from side Bar</h3>
+        <h3>No Buckets available... Add from side bar or ask friends to share</h3>
       </div>
       </Container>
       </main> 
     )
   }
-  if(!loading && listBucket.length >= 1) {
+  if(!loading && ((isSharedSelected===false && listBucket.length >=1) || (isSharedSelected && sharedListBucket.length>=1))){
       // console.log('LIST BUCKETS', listBucket[currBucket]);
       screen = (
         <main className={classes.content}>
@@ -375,7 +427,8 @@ export default function Dashboard(props) {
             <Grid item xs={12} md={8} lg={9}>
               <Paper className={fixedHeightPaper}>
                 <Chart 
-                  bucket={listBucket[currBucket]}
+                  isSharedSelected={isSharedSelected}
+                  bucket={isSharedSelected===false? listBucket[currBucket] : sharedListBucket[currSharedBucket]}
                   links={links}
                   explore={explore}
                   onDelete={onDeleteBucket}
@@ -393,7 +446,7 @@ export default function Dashboard(props) {
             {/* Recent Orders */}
             <Grid item xs={12}>
               <Paper className={classes.paper}>
-              <Orders bucketKey = {listBucket[currBucket].key} buckets = {buckets} setExplore={setExplore}/>
+              <Orders bucketKey = {isSharedSelected===false? listBucket[currBucket].key  : sharedListBucket[currSharedBucket].key} buckets = {buckets} setExplore={setExplore}/>
               </Paper>
             </Grid>
           </Grid>
@@ -486,20 +539,36 @@ export default function Dashboard(props) {
         }}
         open={open}
       >
-        <div className={classes.toolbarIcon}>
+      <div className={classes.toolbarIcon} >
+        {/* <Title>Your Sites</Title> */}
+      </div>
+        <div  className={classes.allListDrawer}>
+          <Divider />
+          <div className={classes.toolbarIcon}  onClick={()=>changeListTypeHelper(false)}>
+            <Title>My Sites</Title>
+          </div>
+          <Divider />
+          <div className={clsx(classes.bucketListStyle,  (isSharedSelected === true) && classes.hideList)}>
+            <List >
+              <BucketsList bucketList={listBucket} onLoadBucket = {onLoadBucket}/>
+            </List>
+          </div>
+          <Divider  />
+          <div className={classes.toolbarIcon}  onClick={()=>changeListTypeHelper(true)}>
+            
+            <Title>Shared With Me</Title>
+          </div>
+          <Divider />
+          <div className={clsx(classes.bucketListStyle,  (isSharedSelected === false) && classes.hideList)}>
+            <List >
+              <ListSharedBuckets bucketList={sharedListBucket} onSharedLoadBucket = {onSharedLoadBucket}/>
+            </List>
+          </div>
+          <Divider  />
           
-          <Title>YOUR SITES</Title>
-        </div>
-        
-        <Divider />
-        <div className={classes.bucketListStyle}>
-          <List >
-            <BucketsList bucketList={listBucket} onLoadBucket = {onLoadBucket}/>
-          </List>
-        </div>
-				<Divider  />
-
-				<NewBucket setLoading={setLoading} buckets={buckets} bucketList={listBucket} setBucketList={setListBucket} onLoadBucket = {onLoadBucket}  />
+        </div>  
+        <Divider  />
+        <NewBucket setLoading={setLoading} buckets={buckets} bucketList={listBucket} setBucketList={setListBucket} onLoadBucket = {onLoadBucket}  />
       </Drawer>
       {screen}
     </div>
