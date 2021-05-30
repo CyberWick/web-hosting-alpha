@@ -125,7 +125,7 @@ export default function Chart(props) {
                 )}
               </Dropzone>
             </Grid>
-            <Grid item>
+            {/* <Grid item>
             <Dropzone onDrop={props.onModify}>
             {({ getRootProps, getInputProps }) => (
               <div {...getRootProps()}>
@@ -139,7 +139,7 @@ export default function Chart(props) {
               </div>
               )}
             </Dropzone>
-            </Grid>
+            </Grid> */}
           </Grid>
       </Grid>
            </React.Fragment>

@@ -45,9 +45,10 @@ const useStyles = makeStyles((theme) => ({
     display: 'none'
   },
   modifyButtons: {
-    
+    padding:"3px 6px",
   },
   staticButtons: {
+    padding:"6px",
     cursor: 'default'    
   }
 }));
