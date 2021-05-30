@@ -161,6 +161,8 @@ export default function Dashboard(props) {
   const [open, setOpen] = useState(true);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const buckets = useSelector(state => state.user_data.buckets); 
+  const spaceUser = useSelector(state => state.user_data.spaceUser); 
+  const textileUser = useSelector(state => state.user_data.textileUser); 
   const client = useSelector(state => state.user_data.client);
   const user_profile = useSelector(state => state.user_data.user_details)
   const threadID = useSelector(state => state.user_data.threadID)
@@ -176,8 +178,29 @@ export default function Dashboard(props) {
   const [new_lname, setlname] = useState(user_profile.lname)
   const [new_email,setemail] = useState(user_profile.emailid)
 
+
+  const callback = async (reply, err) => {
+    if (!reply || !reply.message) return console.log('no message')
+
+    console.log('Reply ds format: ', reply);
+    const bodyBytes = await spaceUser.identity.decrypt(reply.message.body)    
+    const decoder = new TextDecoder()
+    const body = decoder.decode(bodyBytes)
+    console.log(body.content)
+  }
+
+
+  const watchInbox = async() => {
+    const mailboxID = await textileUser.getMailboxID();
+    console.log('Mailbox created for user2..');
+    const resp = await textileUser.watchInbox(mailboxID, callback);
+    console.log(resp);
+  }
+
   useEffect(() => {
     console.log('Running useEffect');
+    watchInbox();    
+    
     onLoadUser();
   }, []);
 
@@ -223,7 +246,29 @@ export default function Dashboard(props) {
   }
   };
 
+  const getInboxReq = async() => {
 
+    const inboxResp = await textileUser.listInboxMessages();
+    // console.log('Inbox of user2: ', inboxResp);
+
+    for(const element of inboxResp){
+        // Check signature
+        const msgBody = element.body
+        // const sig = element.signature
+        // const verify = await id.public.verify(msgBody, sig)
+        // console.log('Verificaion: ', verify);
+
+        // Check body
+        const bodyBytes = await spaceUser.identity.decrypt(msgBody)
+        const decoder = new TextDecoder()
+        const body = decoder.decode(bodyBytes)
+        console.log('msg body: ', body);
+
+    }
+
+  }
+
+  
   const onLoadUser = async() => {
     setLoading(true);
     // const firstBucket = await buckets.getOrCreate('personal');
@@ -233,6 +278,7 @@ export default function Dashboard(props) {
       await onLoadBucket(listBuckets[0], 0);
       setListBucket(prev => prev.concat(listBuckets));
     }
+    getInboxReq();
     // setCurrBucket(0);
     setLoading(false);
   }
