@@ -79,8 +79,14 @@ export const loadUserData = (pk, rememberMe, user_details) => {
                     console.log('USER_DETAILS', user_details)
                     threadID = await client.newDB(undefined, 'userDatastore')
                     console.log('THREADID', threadID.toString())
+
+                    const dummySharedObject = {
+                        _id: 'bucketKey',
+                        bucketRoot: {}
+                    }
                     
                     await client.newCollectionFromObject(threadID, user_details, {name: 'userProfile'})
+                    await client.newCollectionFromObject(threadID, dummySharedObject, {name: 'shared'})
                     await client.create(threadID, 'userProfile', [user_details])
 
                     const query = new Query().orderByID()

@@ -3,7 +3,7 @@ import React from 'react';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 
-const BucketsList = (props) => {
+const SharedBucketsList = (props) => {
 	
 	let buckets = null;
 	if (props.bucketList){
@@ -12,7 +12,7 @@ const BucketsList = (props) => {
 			<div>
 			{	
 				props.bucketList.map((bucket, index)=>{
-					return(<ListItem key = {bucket.key} onClick = {()=>props.onLoadBucket(bucket, index)}button>
+					return(<ListItem key = {bucket.key} onClick = {()=>props.onSharedLoadBucket(bucket, index)} button>
 						<ListItemText primary= {bucket.name} />
 					</ListItem>)
 				})
@@ -25,4 +25,4 @@ const BucketsList = (props) => {
 	)
 
 }
-export default BucketsList;
+export default SharedBucketsList;

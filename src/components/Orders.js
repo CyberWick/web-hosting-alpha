@@ -15,6 +15,8 @@ import { makeStyles } from '@material-ui/core/styles';
 import CreateIcon from '@material-ui/icons/Create';
 import DeleteIcon from '@material-ui/icons/Delete';
 import FolderIcon from '@material-ui/icons/Folder';
+
+import InfoOutlined from '@material-ui/icons/InfoOutlined';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import InsertDriveFileOutlinedIcon from '@material-ui/icons/InsertDriveFileOutlined';
 import TransitionsModal from './uploadData.js'
@@ -25,8 +27,8 @@ import { Users } from '@spacehq/sdk';
 import { Buckets, PrivateKey } from '@textile/hub';
 
 // Generate Order Data
-function createData(id, date, name, isDirectory) {
-  return { id, date, name, isDirectory };
+function createData(id, date, name, isDirectory, cid) {
+  return { id, date, name, isDirectory, cid };
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -57,7 +59,7 @@ const useStyles = makeStyles((theme) => ({
 export default function Orders(props) {
   const classes = useStyles();
   const initialData = [
-    createData(0, '16 Mar, 2019', 'Data Loading', 0)
+    createData(0, '16 Mar, 2019', 'Data Loading', 0, "")
   ];
   const [navStack, setNavStack] = useState([]);
   const [fileToBeEdited, setFileToBeEdited] = useState('');
@@ -82,23 +84,29 @@ export default function Orders(props) {
         console.log('File uploaded!!')
     }
     // setOpen(false);
+    const root = await props.buckets.root(props.bucketKey)
+    props.setExplore(root.path)
+    setToggleFolderModal(false);
     setLoading(false);
-    
+    fetchData(props.bucketKey, props.buckets);
 }
 
 const handleFileDrop = async (acceptedFiles) => {
   setLoading(true);
   handleCloseAddMenu();
 
-    for(const file of acceptedFiles){
-        console.log(file.name);
-        const file_info = {content: file.stream(), mimeType: file.type};
-        // console.log(props.pushPath + file.name);
-        await props.buckets.pushPath(props.bucketKey, currentPath.substring(1) + file.name, file_info);
-        console.log('File uploaded!!')
-    }
-    // setOpen(false);
+  for(const file of acceptedFiles){
+      console.log(file.name);
+      const file_info = {content: file.stream(), mimeType: file.type};
+      // console.log(props.pushPath + file.name);
+      await props.buckets.pushPath(props.bucketKey, currentPath.substring(1) + file.name, file_info);
+      console.log('File uploaded!!')
+  }
+  // setOpen(false);
+  const root = await props.buckets.root(props.bucketKey)
+  props.setExplore(root.path)
   setLoading(false);
+  setToggleFileModal(false);
   fetchData(props.bucketKey, props.buckets);
 }
 
@@ -116,6 +124,8 @@ const handleEditDrop = async (acceptedFiles) => {
     const file_info = {content: file.stream(), mimeType: file.type};
     await props.buckets.pushPath(props.bucketKey, currentPath.substring(1) + file.name, file_info);
   }
+  const root = await props.buckets.root(props.bucketKey)
+  props.setExplore(root.path)
   setToggleEditModal(false);
   setLoading(false);
   fetchData(props.bucketKey, props.buckets);
@@ -143,6 +153,8 @@ const handleEditModalClose = () => {
     console.log('Clicked delete.. ');
     await props.buckets.removePath(props.bucketKey, currentPath.substring(1) + name);
     console.log('file deleted!!');
+    const root = await props.buckets.root(props.bucketKey)
+    props.setExplore(root.path)
     setLoading(false);
     fetchData(props.bucketKey, props.buckets);
   }
@@ -154,7 +166,7 @@ const handleEditModalClose = () => {
   }
 
   const refreshData = (item) => {
-    let newRows = [createData(0, '', '..', 1)];
+    let newRows = [createData(0, '', '..', 1,"")];
     let curpath = '/';
     navStack.forEach((element) => {
       item = item.items[element];
@@ -167,15 +179,15 @@ const handleEditModalClose = () => {
       item.items.forEach((element) => {
         const dateInJs = Math.round(element.metadata.updatedAt/1000000);
         if (element.isDir) {
-          newRows.push(createData(i, (new Date(dateInJs)).toDateString(), element.name, 1));
+          newRows.push(createData(i, (new Date(dateInJs)).toDateString(), element.name, 1, element.cid));
         } else if(element.name !== '.textileseed'){
-          newRows.push(createData(i, (new Date(dateInJs)).toDateString(), element.name, 0));
+          newRows.push(createData(i, (new Date(dateInJs)).toDateString(), element.name, 0,element.cid));
         }
         i++;
       });
       setRows(newRows);
     } else {
-      newRows.push(createData(1, '16 Mar, 2019', 'not a directory', 0));
+      newRows.push(createData(1, '16 Mar, 2019', 'not a directory', 0, ""));
       setRows(newRows);
     }
   }
@@ -187,7 +199,7 @@ const handleEditModalClose = () => {
     // console.log(list)
     setNavStack([]);
     setCurrentDir(list.item);
-    let newRows = [createData(0, '', '..', 1)];
+    let newRows = [createData(0, '', '..', 1,"")];
     let curpath = '/';
     setCurrentPath(curpath)
     // console.log(item);
@@ -196,15 +208,15 @@ const handleEditModalClose = () => {
       list.item.items.forEach((element) => {
         const dateInJs = Math.round(element.metadata.updatedAt/1000000);
         if (element.isDir) {
-          newRows.push(createData(i, (new Date(dateInJs)).toDateString(), element.name, 1));
+          newRows.push(createData(i, (new Date(dateInJs)).toDateString(), element.name, 1, element.cid));
         } else if(element.name !== '.textileseed'){
-          newRows.push(createData(i, (new Date(dateInJs)).toDateString(), element.name, 0));
+          newRows.push(createData(i, (new Date(dateInJs)).toDateString(), element.name, 0, element.cid));
         }
         i++;
       });
       setRows(newRows);
     } else {
-      newRows.push(createData(1, '16 Mar, 2019', 'not a directory', 0));
+      newRows.push(createData(1, '16 Mar, 2019', 'not a directory', 0,""));
       setRows(newRows);
     }
     setLoading(false);
@@ -323,6 +335,16 @@ const handleEditModalClose = () => {
                     deleteListener(row.name);
                   }}>
                   <DeleteIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  aria-label="edit"
+                  color="primary"
+                  className={clsx(classes.modifyButtons, (row.name === '..') && classes.hideModifyButtons)}
+                  onClick={() => {
+                    window.open("https://explore.ipld.io/#/explore"+row.cid, '_blank').focus();
+                  }}
+                  >
+                  <InfoOutlined fontSize="small" />
                 </IconButton>
               </TableCell>
             </TableRow>
