@@ -84,10 +84,9 @@ const NewBucket = (props) => {
         newBucketList.push(root)
         props.setBucketList(newBucketList)
         await props.onLoadBucket(root, newBucketList.length-1)
-       
+        setTitle('')
         props.setLoading(false);
-      
-      }
+    }
       
     const handleDrop = async (acceptedFiles) => {
         if(title===''){

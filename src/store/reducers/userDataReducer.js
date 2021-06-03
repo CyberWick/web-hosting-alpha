@@ -2,6 +2,7 @@ import { LOAD_USER_DATA, LOAD_USER_DATA_ERROR, ON_USER_SIGN_OUT } from "../actio
 
 const initialState = {
     spaceUser: null,
+    textileUser: null,
     buckets: null,
     client: null,
     threadID: null,
@@ -16,6 +17,7 @@ const userDataReducer = (state = initialState, action) => {
             return {
                 ...state,
                 spaceUser: action.spaceUser,
+                textileUser: action.textileUser,
                 buckets: action.buckets,
                 client: action.client,
                 threadID: action.threadID,

@@ -1,6 +1,8 @@
 import { Users } from "@spacehq/users";
 import { Buckets, Client, PrivateKey, Query, ThreadID } from "@textile/hub";
 import { reactLocalStorage } from "reactjs-localstorage";
+import { globalUsersThreadID } from "../../constants/RegisteredUsers"
+const textileSDK = require('@textile/hub');
 
 export const LOAD_USER_DATA = 'LOAD_USER_DATA';
 export const LOAD_USER_DATA_ERROR = 'LOAD_USER_DATA_ERROR';
@@ -17,10 +19,11 @@ export const onUserSignOut = () => {
     }
 }
 
-export const loadUserAccess = (spaceUser, buckets, client, threadID, user_details) => {
+export const loadUserAccess = (spaceUser, textileUser, buckets, client, threadID, user_details) => {
     return {
         type: LOAD_USER_DATA,
         spaceUser: spaceUser,
+        textileUser: textileUser,
         buckets: buckets,
         client: client,
         threadID: threadID,
@@ -57,10 +60,14 @@ export const loadUserData = (pk, rememberMe, user_details) => {
             const spaceUser = users.authenticate(identity).then(async(spaceUser) => {
                 console.log('LOADUSERDATA - SPACEUSER', spaceUser)
                 const buckets = Buckets.withUserAuth(spaceUser.storageAuth);
+                const testExisting = await buckets.existing();
+                console.log(testExisting);
                 const client = Client.withUserAuth(spaceUser.storageAuth);
                 if(rememberMe) {
                     reactLocalStorage.set('privKey', pk);
                 }
+                const textileUser = await textileSDK.Users.withUserAuth(spaceUser.storageAuth);
+                await textileUser.setupMailbox();
 
                 let threadID
 
@@ -79,7 +86,21 @@ export const loadUserData = (pk, rememberMe, user_details) => {
                     const query = new Query().orderByID()
                     const result = await client.find(threadID, 'userProfile', query);
                     console.log('NEW USER ADDED TO THREADDB', result);
-                    dispatch(loadUserAccess(spaceUser, buckets, client,threadID, user_details));
+
+                    const globalTID = ThreadID.fromString(globalUsersThreadID);
+
+                    const email = user_details.emailid;
+                    const dataFromat = {
+                        _id: email,
+                        publicKey: identity.public.toString()
+                    }
+                    console.log('Adding pubKey entry now..');
+
+                    await client.create(globalTID, 'RegisteredUsers', [dataFromat]).catch(err => console.error(err));
+                    console.log('EMAIL MAPPED TO PUBLIC KEY');
+
+
+                    dispatch(loadUserAccess(spaceUser, textileUser, buckets, client,threadID, user_details));
                 } else {
                     const threadList = await client.listDBs();
                     console.log('DBs', threadList);
@@ -89,7 +110,7 @@ export const loadUserData = (pk, rememberMe, user_details) => {
                     const query = new Query().orderByID()   
                     const result = await client.find(threadID, 'userProfile', query);
                     console.log('RESULT: ' , result);
-                    dispatch(loadUserAccess(spaceUser, buckets, client,threadID, result[0]));
+                    dispatch(loadUserAccess(spaceUser, textileUser, buckets, client,threadID, result[0]));
                 }
                 
             });

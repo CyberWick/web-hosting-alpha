@@ -42,9 +42,9 @@ const WelcomeScreen = (props) => {
                         </Grid>
                         <Grid item>
                             {/* <Typography></Typography> */}
-                            <h5 style={{color: 'white', marginTop: -5, textAlign: 'center'}}>A peer-to-peer solution for your website hosting, make it more faster, safer and open. 
+                            <h4 style={{color: 'white', marginTop: -5, textAlign: 'center'}}>A peer-to-peer solution for your website hosting, make it more faster, safer and open. 
                             <p ><Link to='/about' style={{color: 'white'}}>Click to know how?</Link></p>
-                            </h5>
+                            </h4>
                         </Grid>
                     </Grid>
                     <Grid item xs={12} sm={4} >
