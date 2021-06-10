@@ -16,7 +16,7 @@ import Link from '@material-ui/core/Link';
 import Chart from '../components/Chart';
 import Deposits from '../components/Deposits';
 import Orders from '../components/Orders';
-import { PrivateKey, ThreadID } from '@textile/hub';
+import { PrivateKey, PublicKey, ThreadID } from '@textile/hub';
 import { CircularProgress } from '@material-ui/core';
 import { useSelector } from 'react-redux';
 import { AccountCircle } from '@material-ui/icons';
@@ -176,6 +176,33 @@ export default function Dashboard(props) {
   const [new_lname, setlname] = useState(user_profile.lname)
   const [new_email,setemail] = useState(user_profile.emailid)
 
+  const onShareBucket = async(pubKey, email, role) => {
+    console.log('SHARING BUCKET');//, listBucket[currBucket]);
+    if(currBucket === -1) {
+      return alert('No active bucket selected');
+    } else {
+      console.log('ADDING ', pubKey, ' as ', role);
+      const accessRole = ['N/A', 'Reader', 'Writer', 'Admin'];
+      const roleID = accessRole.findIndex(item => item === role);
+      if(roleID === -1) {
+        return alert('Undefined role');
+      }
+      const roles = new Map();
+      roles.set(pubKey, 3);
+      await buckets.pushPathAccessRoles(listBucket[currBucket].key, '', roles);
+      const shareJSON = {
+        type: 'SITE_SHARED',
+        _id: listBucket[currBucket].key,
+        bucketRoot: listBucket[currBucket],
+      }
+      const shareMessage = JSON.stringify(shareJSON);
+      const encoder = new TextEncoder();
+      const shareBody = encoder.encode(shareMessage);
+      const pk = reactLocalStorage.get('privKey');
+      
+      await textileUser.sendMessage(PrivateKey.fromString(pk), PublicKey.fromString(pubKey), shareBody).catch(err => console.log('COULDNT SEND MESSAGE', err));
+      }
+    }
 
   const callback = async (reply, err) => {
     if (!reply || !reply.message) return console.log('no message')
@@ -478,6 +505,7 @@ export default function Dashboard(props) {
                   links={links}
                   onDelete={onDeleteBucket}
                   onUpdate={onUpdateVersion}
+                  onShare={onShareBucket}
                   // onModify={onModifyBucket}
                   />
               </Paper>
