@@ -6,10 +6,12 @@ import Fade from '@material-ui/core/Fade';
 import Dropzone from 'react-dropzone';
 
 import Backdrop from '@material-ui/core/Backdrop';
-import CircularProgress from '@material-ui/core/CircularProgress';
 import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import Button from '@material-ui/core/Button';
-import Done from '@material-ui/icons/Done';
+import { useSelector } from 'react-redux';
+import { ThreadID } from '@textile/hub';
+import { globalUsersThreadID } from '../constants/RegisteredUsers';
+import { readFilter, schema, writeValidator } from '../constants/RecentActivitySchema';
 
 const useStyles = makeStyles((theme) => ({
     modal: {
@@ -51,9 +53,12 @@ const NewBucket = (props) => {
         setOpen(false);
     };
 
-
+    //********************************************* */
+    const spaceUser = useSelector(state => state.user_data.spaceUser);
+    const client = useSelector(state => state.user_data.client);
+    const user_details = useSelector(state => state.user_data.user_details);
+    //******************************************** */
     
-    const [loading, setLoading] = React.useState(false);
     /**
      * @param {acceptedFiles} File[]
      */
@@ -83,6 +88,31 @@ const NewBucket = (props) => {
         let newBucketList = [...props.bucketList]
         newBucketList.push(root)
         props.setBucketList(newBucketList)
+        //************************************************** */
+        await client.updateCollection(ThreadID.fromString(globalUsersThreadID), {
+            name: 'RecentActivities',
+            schema: schema,
+            writeValidator: writeValidator,
+            readFilter: readFilter,
+        });
+
+        const note = {
+            _id: root.thread+':'+title,
+            name: root.thread+':'+title,
+            member: [{
+                pubKey: spaceUser.identity.public.toString(),
+                role: 3,
+                email: user_details.emailid,
+            }],
+            messages: [user_details.emailid+' ('+user_details.fname+'): ' +'created site at '+ Date(Date.now()).toString(),],
+        }
+
+        console.log('NOTE: ', note);
+        const respone = await client.create(ThreadID.fromString(globalUsersThreadID), 'RecentActivities', [note]);
+        console.log('ON CREATE RESPONSE: ', respone);
+
+        // await client.save(ThreadID.fromString(globalUsersThreadID), )
+        //************************************************* */
         await props.onLoadBucket(root, newBucketList.length-1)
         setTitle('')
         props.setLoading(false);

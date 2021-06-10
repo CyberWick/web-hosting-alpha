@@ -66,7 +66,7 @@ export const loadUserData = (pk, rememberMe, user_details) => {
                 if(rememberMe) {
                     reactLocalStorage.set('privKey', pk);
                 }
-                const textileUser = await textileSDK.Users.withUserAuth(spaceUser.storageAuth);
+                const textileUser = textileSDK.Users.withUserAuth(spaceUser.storageAuth);
                 await textileUser.setupMailbox();
 
                 let threadID
@@ -83,9 +83,9 @@ export const loadUserData = (pk, rememberMe, user_details) => {
                     await client.newCollectionFromObject(threadID, user_details, {name: 'userProfile'})
                     await client.create(threadID, 'userProfile', [user_details])
 
-                    const query = new Query().orderByID()
-                    const result = await client.find(threadID, 'userProfile', query);
-                    console.log('NEW USER ADDED TO THREADDB', result);
+                        const query = new Query().orderByID()
+                        const result = await client.find(threadID, 'userProfile', query);
+                        console.log('NEW USER ADDED TO THREADDB', result);
 
                     const globalTID = ThreadID.fromString(globalUsersThreadID);
 
