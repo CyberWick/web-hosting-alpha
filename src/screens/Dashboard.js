@@ -359,8 +359,8 @@ export default function Dashboard(props) {
     setLoading(true);
 
     // TODO: Add Fetch for shared buckets
-    loadInboxRequests();
-    refreshSharedBuckets();
+    await loadInboxRequests();
+    await refreshSharedBuckets();
 
 
     const listBuckets = await buckets.existing();
