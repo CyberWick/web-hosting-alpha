@@ -52,6 +52,7 @@ const NewBucket = (props) => {
     };
 
 
+
     
     const [loading, setLoading] = React.useState(false);
     /**
@@ -66,6 +67,7 @@ const NewBucket = (props) => {
         // }
         props.setLoading(true);
         setOpen(false);
+        props.buckets.withThread(props.userTID);
         let {root, threadID} = await props.buckets.getOrCreate(title);
         const buck_links = await props.buckets.links(root.key, '');
         // setBucketName(currState => { return {...currState, links: buck_links}});
@@ -85,6 +87,7 @@ const NewBucket = (props) => {
         newBucketList.push(root)
         props.setBucketList(newBucketList)
         console.log("root", root)
+        props.setIsSharedSeleted(false);
         await props.onLoadBucket(root, newBucketList.length-1)
         setTitle('')
         props.setLoading(false);

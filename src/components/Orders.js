@@ -194,7 +194,7 @@ const handleEditModalClose = () => {
 
   const fetchData = async (bucketKey, buckets) => {
     setLoading(true);
-    console.log("Searchin...")
+    console.log("Searchin... in ", buckets)
     const list = await buckets.listPath(bucketKey, '', 10)
     // console.log(list)
     setNavStack([]);
@@ -235,7 +235,9 @@ const handleEditModalClose = () => {
         <Title style={{
           width: '100%'
         }}>{currentPath}</Title>
-        <Button variant="contained" color="primary" onClick={handleOpenAddMenu}>
+        <Button 
+          // className={clsx(classes.staticButtons, (row.isDirectory === 0) && classes.hideModifyButtons)}
+          variant="contained" color="primary" onClick={handleOpenAddMenu}>
           Add
         </Button>
         <Menu

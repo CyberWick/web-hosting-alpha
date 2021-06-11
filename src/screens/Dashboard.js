@@ -185,7 +185,6 @@ export default function Dashboard(props) {
   const [sharedListBucket, setSharedListBucket] = useState([]);
   const [isSharedSelected, setIsSharedSeleted] = useState(false);
   const [currSharedBucket, setCurrSharedBucket] = useState(-1);
-  const [sharedBucketMetaData, setSharedBucketMetaData] = useState([]);
   const [explore, setExplore] = useState("");
 
   const watchCallback = async (reply, err) => {
@@ -266,7 +265,7 @@ export default function Dashboard(props) {
   };
 
 
-  const loadInboxRequests = () => {
+  const loadInboxRequests = async() => {
     const inboxResp = await textileUser.listInboxMessages();
     // console.log('Inbox of user2: ', inboxResp);
 
@@ -308,7 +307,19 @@ export default function Dashboard(props) {
     const sharedEntriesOnThread = await client.find(threadID, 'shared', {});
     console.log('All shared buckets present in the collection: ', sharedEntriesOnThread);
 
+    const tempList = []
+    for(const bucketObjet of sharedEntriesOnThread){
+      tempList.push(bucketObjet.bucketRoot);
+    }
+    setSharedListBucket(tempList);
+
+
+    // TODO: 
     // Assign or return the sharedEntriesOnThread..
+    // Line 535: isSharedSeleted
+    // Orders- withThread()
+    //       - delete button
+
     
   }
 
@@ -320,15 +331,6 @@ export default function Dashboard(props) {
     loadInboxRequests();
     refreshSharedBuckets();
 
-    let tempSharedList=[];
-    if(sharedBucketMetaData.length>=1){
-      sharedBucketMetaData.map(async(sharedMetatData, index)=>{
-        await buckets.withThread(sharedMetatData.threadID);
-        const root = await buckets.root(sharedMetatData.bucketKey);
-        tempSharedList.push(root);
-      });
-      setSharedListBucket(tempSharedList);
-    }
 
     const listBuckets = await buckets.existing();
     console.log('LIST: ', listBuckets);
@@ -344,7 +346,7 @@ export default function Dashboard(props) {
 
   const onSharedLoadBucket = async(bucketRoot, index) => {
     setCurrBucket(index);
-    await buckets.withThread(sharedBucketMetaData[index].threadID);
+    // await buckets.withThread(sharedBucketMetaData[index].threadID);
     const inLinks = await buckets.links(bucketRoot.key);
     console.log("links", inLinks);
     console.log('CLIENT', client);
@@ -356,12 +358,18 @@ export default function Dashboard(props) {
     setLinks(inLinks);
   }
 
-  const onLoadBucket = async(bucketRoot, index) => {
+  const onLoadBucket = async(bucketRoot, index, isShared=false) => {
       console.log('Before with..');
       const id = threadID.toString();
       await buckets.withThread(bucketRoot.thread);
       console.log('After with..', id);
-      setCurrBucket(index);  
+      if(isShared){
+        console.log('Loading shared bucket');
+        setCurrSharedBucket(index);
+      }else{
+        console.log('Loading user bucket');
+        setCurrBucket(index);
+      }
       // await buckets.getOrCreate(bucketRoot.name);
       const inLinks = await buckets.links(bucketRoot.key);
       console.log("links", inLinks);
@@ -463,7 +471,7 @@ export default function Dashboard(props) {
     setIsSharedSeleted(newIsSharedSelected);
     if (newIsSharedSelected){
         if(sharedListBucket.length>=1){
-          await onSharedLoadBucket(sharedListBucket[0], 0);
+          await onLoadBucket(sharedListBucket[0], 0, true);
         } else {
           setCurrSharedBucket(-1);
         }
@@ -647,14 +655,14 @@ export default function Dashboard(props) {
           <Divider />
           <div className={clsx(classes.bucketListStyle,  (isSharedSelected === false) && classes.hideList)}>
             <List >
-              <ListSharedBuckets bucketList={sharedListBucket} onSharedLoadBucket = {onSharedLoadBucket}/>
+              <ListSharedBuckets bucketList={sharedListBucket} onSharedLoadBucket = {onLoadBucket}/>
             </List>
           </div>
           <Divider  />
           
         </div>  
         <Divider  />
-        <NewBucket setLoading={setLoading} buckets={buckets} bucketList={listBucket} setBucketList={setListBucket} onLoadBucket = {onLoadBucket}  />
+        <NewBucket setIsSharedSeleted={setIsSharedSeleted} userTID={threadID} setLoading={setLoading} buckets={buckets} bucketList={listBucket} setBucketList={setListBucket} onLoadBucket = {onLoadBucket}  />
       </Drawer>
       {screen}
     </div>
