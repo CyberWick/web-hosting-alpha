@@ -18,7 +18,7 @@ import MenuIcon from '@material-ui/icons/Menu';
 import Chart from '../components/Chart';
 import Deposits from '../components/Deposits';
 import Orders from '../components/Orders';
-import { ThreadID } from '@textile/hub';
+import { PrivateKey, PublicKey, ThreadID } from '@textile/hub';
 import { CircularProgress } from '@material-ui/core';
 import { useDispatch, useSelector } from 'react-redux';
 import { AccountCircle } from '@material-ui/icons';
@@ -35,6 +35,9 @@ import Title from '../components/Title'
 import Backdrop from '@material-ui/core/Backdrop';
 import NewBucket from '../components/newBucket.js';
 import ListSharedBuckets from '../components/ListSharedBuckets.js';
+// import CircularProgress from '@material-ui/core/CircularProgress';
+import { reactLocalStorage } from 'reactjs-localstorage';
+
 
 function Copyright() {
   return (
@@ -210,6 +213,34 @@ export default function Dashboard(props) {
     setLoading(false);
 
   }
+
+  const onShareBucket = async(pubKey, email, role) => {
+    console.log('SHARING BUCKET');//, listBucket[currBucket]);
+    if(currBucket === -1) {
+      return alert('No active bucket selected');
+    } else {
+      console.log('ADDING ', pubKey, ' as ', role);
+      const accessRole = ['N/A', 'Reader', 'Writer', 'Admin'];
+      const roleID = accessRole.findIndex(item => item === role);
+      if(roleID === -1) {
+        return alert('Undefined role');
+      }
+      const roles = new Map();
+      roles.set(pubKey, 3);
+      await buckets.pushPathAccessRoles(listBucket[currBucket].key, '', roles);
+      const shareJSON = {
+        type: 'SITE_SHARED',
+        _id: listBucket[currBucket].key,
+        bucketRoot: listBucket[currBucket],
+      }
+      const shareMessage = JSON.stringify(shareJSON);
+      const encoder = new TextEncoder();
+      const shareBody = encoder.encode(shareMessage);
+      const pk = reactLocalStorage.get('privKey');
+      
+      await textileUser.sendMessage(PrivateKey.fromString(pk), PublicKey.fromString(pubKey), shareBody).catch(err => console.log('COULDNT SEND MESSAGE', err));
+      }
+    }
   
   const watchInbox = async() => {
     const mailboxID = await textileUser.getMailboxID();
@@ -343,21 +374,6 @@ export default function Dashboard(props) {
     setLoading(false);
   }
 
-
-  const onSharedLoadBucket = async(bucketRoot, index) => {
-    setCurrBucket(index);
-    // await buckets.withThread(sharedBucketMetaData[index].threadID);
-    const inLinks = await buckets.links(bucketRoot.key);
-    console.log("links", inLinks);
-    console.log('CLIENT', client);
-    const genThread = ThreadID.fromString(bucketRoot.thread);
-    const DBInfo = await client.getDBInfo(genThread);
-    setExplore(bucketRoot.path)
-    console.log("explore", explore)
-    setDBInfo(DBInfo);
-    setLinks(inLinks);
-  }
-
   const onLoadBucket = async(bucketRoot, index, isShared=false) => {
       console.log('Before with..');
       const id = threadID.toString();
@@ -375,6 +391,7 @@ export default function Dashboard(props) {
       console.log("links", inLinks);
       console.log('CLIENT', client);
       const genThread = ThreadID.fromString(bucketRoot.thread);
+      // ThreadID.
       const DBInfo = await client.getDBInfo(genThread);
       setExplore(bucketRoot.path)
       console.log("explore", explore)
@@ -527,6 +544,7 @@ export default function Dashboard(props) {
                   explore={explore}
                   onDelete={onDeleteBucket}
                   onUpdate={onUpdateVersion}
+                  onShare={onShareBucket}
                   // onModify={onModifyBucket}
                   />
               </Paper>
