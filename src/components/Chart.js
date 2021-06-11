@@ -50,10 +50,13 @@ const Chart = (props) => {
   const handleShare = async() => {
       console.log("EMAIL ID ", emailid)
       console.log("COLLAB ROLE ", collabRole)
-
+      try {
       const result = await client.findByID(globaltid,'RegisteredUsers',emailid)
       console.log('PUB KEY', result.publicKey)
       props.onShare(result.publicKey, emailid, collabRole)
+      } catch(err) {
+        alert(emailid+' doesn\'t exist!');
+      }
       setEmailid('')
       setCollabDialog(false)
   }

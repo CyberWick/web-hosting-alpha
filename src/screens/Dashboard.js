@@ -176,33 +176,33 @@ export default function Dashboard(props) {
   const [new_lname, setlname] = useState(user_profile.lname)
   const [new_email,setemail] = useState(user_profile.emailid)
 
-  const onShareBucket = async(pubKey, email, role) => {
-    console.log('SHARING BUCKET');//, listBucket[currBucket]);
-    if(currBucket === -1) {
-      return alert('No active bucket selected');
-    } else {
-      console.log('ADDING ', pubKey, ' as ', role);
-      const accessRole = ['N/A', 'Reader', 'Writer', 'Admin'];
-      const roleID = accessRole.findIndex(item => item === role);
-      if(roleID === -1) {
-        return alert('Undefined role');
-      }
-      const roles = new Map();
-      roles.set(pubKey, 3);
-      await buckets.pushPathAccessRoles(listBucket[currBucket].key, '', roles);
-      const shareJSON = {
-        type: 'SITE_SHARED',
-        _id: listBucket[currBucket].key,
-        bucketRoot: listBucket[currBucket],
-      }
-      const shareMessage = JSON.stringify(shareJSON);
-      const encoder = new TextEncoder();
-      const shareBody = encoder.encode(shareMessage);
-      const pk = reactLocalStorage.get('privKey');
+  // const onShareBucket = async(pubKey, email, role) => {
+  //   console.log('SHARING BUCKET');//, listBucket[currBucket]);
+  //   if(currBucket === -1) {
+  //     return alert('No active bucket selected');
+  //   } else {
+  //     console.log('ADDING ', pubKey, ' as ', role);
+  //     const accessRole = ['N/A', 'Reader', 'Writer', 'Admin'];
+  //     const roleID = accessRole.findIndex(item => item === role);
+  //     if(roleID === -1) {
+  //       return alert('Undefined role');
+  //     }
+  //     const roles = new Map();
+  //     roles.set(pubKey, 3);
+  //     await buckets.pushPathAccessRoles(listBucket[currBucket].key, '', roles);
+  //     const shareJSON = {
+  //       type: 'SITE_SHARED',
+  //       _id: listBucket[currBucket].key,
+  //       bucketRoot: listBucket[currBucket],
+  //     }
+  //     const shareMessage = JSON.stringify(shareJSON);
+  //     const encoder = new TextEncoder();
+  //     const shareBody = encoder.encode(shareMessage);
+  //     const pk = reactLocalStorage.get('privKey');
       
-      await textileUser.sendMessage(PrivateKey.fromString(pk), PublicKey.fromString(pubKey), shareBody).catch(err => console.log('COULDNT SEND MESSAGE', err));
-      }
-    }
+  //     await textileUser.sendMessage(PrivateKey.fromString(pk), PublicKey.fromString(pubKey), shareBody).catch(err => console.log('COULDNT SEND MESSAGE', err));
+  //     }
+  //   }
 
   const callback = async (reply, err) => {
     if (!reply || !reply.message) return console.log('no message')
@@ -304,10 +304,11 @@ export default function Dashboard(props) {
         return alert('Undefined role');
       }
       const roles = new Map();
-      roles.set(pubKey, 3);
-      const accessRole = await buckets.pushPathAccessRoles(listBucket[currBucket].key, '', roles);
+      roles.set(pubKey, roleID);
+      const accessRoles = await buckets.pushPathAccessRoles(listBucket[currBucket].key, '', roles);
       const shareJSON = {
         type: 'SITE_SHARED',
+        role: roleID,
         _id: listBucket[currBucket].key,
         bucketRoot: listBucket[currBucket],
       }
@@ -315,16 +316,17 @@ export default function Dashboard(props) {
       const encoder = new TextEncoder();
       const shareBody = encoder.encode(shareMessage);
       const pk = reactLocalStorage.get('privKey');
-      await textileUser.sendMessage(PrivateKey.fromString(pk), pubKey, shareBody).catch(err => console.log('COULDNT SEND MESSAGE', err));
+      await textileUser.sendMessage(PrivateKey.fromString(pk), PublicKey.fromString(pubKey), shareBody).catch(err => console.log('COULDNT SEND MESSAGE', err));
       //******************************************************** */
       const recentActivityCopy = {...recentActivity};
       recentActivityCopy.member.push({
         pubKey: pubKey,
-        role: accessRole,
+        role: roleID,
         email: email,
       });
       recentActivityCopy.messages.push(user_profile.emailid+' ('+user_profile.fname+'): ' +'shared the project with '+ email + ' ('+role+')' +' at '+ Date(Date.now()).toString());
       console.log('RECENT ACTIVITY COPY: ', recentActivityCopy);
+      await client.save(ThreadID.fromString(globalUsersThreadID), 'RecentActivities', [recentActivityCopy]);
       setRecentActivity(recentActivityCopy);
       //******************************************************** */
     }
@@ -435,6 +437,7 @@ export default function Dashboard(props) {
       const recentActivityCopy = {...recentActivity};
       recentActivityCopy.messages.push(user_profile.emailid+' ('+user_profile.fname+'): ' +' updated the website at '+ Date(Date.now()).toString());
       console.log('RECENT ACTIVITY COPY: ', recentActivityCopy);
+      await client.save(ThreadID.fromString(globalUsersThreadID), 'RecentActivities', [recentActivityCopy]);
       setRecentActivity(recentActivityCopy);
       //******************************************************** */
       setTotalFiles(-1);
