@@ -71,7 +71,8 @@ const NewBucket = (props) => {
         // }
         props.setLoading(true);
         setOpen(false);
-        const {root, threadID} = await props.buckets.getOrCreate(title);
+        props.buckets.withThread(props.userTID);
+        let {root, threadID} = await props.buckets.getOrCreate(title);
         const buck_links = await props.buckets.links(root.key, '');
         // setBucketName(currState => { return {...currState, links: buck_links}});
         const path = '';
@@ -86,15 +87,16 @@ const NewBucket = (props) => {
         }
         
         let newBucketList = [...props.bucketList]
+        root = await props.buckets.root(root.key)
         newBucketList.push(root)
         props.setBucketList(newBucketList)
         //************************************************** */
-        await client.updateCollection(ThreadID.fromString(globalUsersThreadID), {
-            name: 'RecentActivities',
-            schema: schema,
-            writeValidator: writeValidator,
-            readFilter: readFilter,
-        });
+        // await client.updateCollection(ThreadID.fromString(globalUsersThreadID), {
+        //     name: 'RecentActivities',
+        //     schema: schema,
+        //     writeValidator: writeValidator,
+        //     readFilter: readFilter,
+        // });
 
         const note = {
             _id: root.thread+':'+title,
@@ -113,6 +115,8 @@ const NewBucket = (props) => {
 
         // await client.save(ThreadID.fromString(globalUsersThreadID), )
         //************************************************* */
+        console.log("root", root)
+        props.setIsSharedSeleted(false);
         await props.onLoadBucket(root, newBucketList.length-1)
         setTitle('')
         props.setLoading(false);

@@ -7,6 +7,7 @@ import Dropzone from 'react-dropzone';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
+import clsx from 'clsx';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import TextField from '@material-ui/core/TextField';
@@ -30,6 +31,10 @@ const styles = makeStyles((theme) => ({
     marginRight: theme.spacing(0.5),
     width: 30,
     height: 30,
+  },
+  hideModifyButtons: {
+    // visibility: 'hidden',
+    display: 'none'
   },
 }));
 
@@ -120,16 +125,17 @@ const Chart = (props) => {
                 variant='button'
                 style={{fontSize: 20}} 
                 onClick={() => {
-                  window.open(props.links.url, '_blank').focus();
+                  window.open("https://explore.ipld.io/#/explore"+props.explore, '_blank').focus();
                 }}
                 className={classes.link}
               >
-                <Folder className={classes.icon} />
-                URL (BUCKET Link)
+                Visualize Chunks 
               </Link>
             </Grid>
           </Grid>
+          
           <Grid 
+            className={clsx( (props.isSharedSelected === true) && classes.hideModifyButtons)} 
             item container xs={12} sm={3} 
             // style={{backgroundColor: '}} 
             direction='column'
