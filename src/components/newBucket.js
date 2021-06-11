@@ -119,6 +119,7 @@ const NewBucket = (props) => {
         props.setIsSharedSeleted(false);
         await props.onLoadBucket(root, newBucketList.length-1)
         setTitle('')
+        console.log('LOADING COMPLETE');
         props.setLoading(false);
     }
       

@@ -411,8 +411,8 @@ export default function Dashboard(props) {
         console.log('RECENT ACTIVITIES ', bucketRoot.name, ': ', fetchRecentAct, fetchRecentAct.messages);
         setRecentActivity(fetchRecentAct);
       }
-      const fetchCopy = {...fetchRecentAct};
-      console.log('COPIED', fetchCopy);
+      // const fetchCopy = {...fetchRecentAct};
+      // console.log('COPIED', fetchCopy);
       //****************************************************** */
       setExplore(bucketRoot.path)
       console.log("explore", explore)
@@ -593,7 +593,7 @@ export default function Dashboard(props) {
             {/* Recent Orders */}
             <Grid item xs={12}>
               <Paper className={classes.paper}>
-              <Orders bucketKey = {isSharedSelected===false? listBucket[currBucket].key  : sharedListBucket[currSharedBucket].key} buckets = {buckets} setExplore={setExplore}/>
+              <Orders bucketKey = {isSharedSelected===false? listBucket[currBucket].key  : sharedListBucket[currSharedBucket].key} buckets = {buckets} setExplore={setExplore} recentActivity={recentActivity}/>
               </Paper>
             </Grid>
           </Grid>
