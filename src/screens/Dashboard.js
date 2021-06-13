@@ -184,6 +184,7 @@ export default function Dashboard(props) {
   const [new_lname, setlname] = useState(user_profile.lname)
   const [new_email,setemail] = useState(user_profile.emailid)
   const [sharedListBucket, setSharedListBucket] = useState([]);
+  const [sharedBucketRoles, setSharedBucketRoles] = useState([]);
   const [isSharedSelected, setIsSharedSeleted] = useState(false);
   const [currSharedBucket, setCurrSharedBucket] = useState(-1);
   const [explore, setExplore] = useState("");
@@ -350,16 +351,17 @@ export default function Dashboard(props) {
     console.log('All shared buckets present in the collection: ', sharedEntriesOnThread);
 
     const tempList = []
+    const tempRolesList = []
     for(const bucketObjet of sharedEntriesOnThread){
       tempList.push(bucketObjet.bucketRoot);
+      tempRolesList.push(bucketObjet.role);
     }
     setSharedListBucket(tempList);
+    setSharedBucketRoles(tempRolesList);
 
 
     // TODO: 
-    // Assign or return the sharedEntriesOnThread..
     // Line 535: isSharedSeleted
-    // Orders- withThread()
     //       - delete button
 
     
@@ -372,7 +374,6 @@ export default function Dashboard(props) {
     // TODO: Add Fetch for shared buckets
     await loadInboxRequests();
     await refreshSharedBuckets();
-
 
     const listBuckets = await buckets.existing();
     console.log('LIST: ', listBuckets);
@@ -591,10 +592,14 @@ export default function Dashboard(props) {
                 <Deposits dbInfo={dbInfo}/>
               </Paper>
             </Grid>
-            {/* Recent Orders */}
+            {/* Directory Structure */}
             <Grid item xs={12}>
               <Paper className={classes.paper}>
-              <Orders bucketKey = {isSharedSelected===false? listBucket[currBucket].key  : sharedListBucket[currSharedBucket].key} buckets = {buckets} setExplore={setExplore} recentActivity={recentActivity}/>
+              <Orders 
+                bucketKey = {isSharedSelected===false? listBucket[currBucket].key  : sharedListBucket[currSharedBucket].key} 
+                sharedRole={isSharedSelected===false? 0  : sharedBucketRoles[currSharedBucket]}
+                buckets = {buckets} setExplore={setExplore} 
+                recentActivity={recentActivity}/>
               </Paper>
             </Grid>
           </Grid>

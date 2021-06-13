@@ -281,7 +281,8 @@ const handleEditModalClose = () => {
           ACTIVITIES
         </Button>
         {/*********************************** */ }
-        <Button variant="contained" color="primary" onClick={handleOpenAddMenu}>
+        <Button variant="contained" color="primary" onClick={handleOpenAddMenu} 
+        className={clsx(classes.staticButtons, (props.sharedRole !== 0) && classes.hideModifyButtons)}>
           ADD
         </Button>
         <Menu
@@ -430,7 +431,7 @@ const handleEditModalClose = () => {
                 <IconButton
                   aria-label="delete"
                   color="secondary"
-                  className={clsx(classes.modifyButtons, (row.isDirectory === 1) && classes.hideModifyButtons)}
+                  className={clsx(classes.modifyButtons, (row.isDirectory === 1 || props.sharedRole === 2) && classes.hideModifyButtons)}
                   onClick={() => {
                     deleteListener(row.name);
                   }}>
