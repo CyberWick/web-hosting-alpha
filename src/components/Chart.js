@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import Title from './Title';
-import {CloudUpload, Delete, Dns, Folder, Language, Share} from '@material-ui/icons';
+import {AccountTree, CloudUpload, Delete, Dns, Folder, Language, Share} from '@material-ui/icons';
 import { Button, Grid, Link, Typography, Menu, MenuItem } from '@material-ui/core';
 import {makeStyles} from '@material-ui/core/styles';
 import Dropzone from 'react-dropzone';
@@ -129,6 +129,7 @@ const Chart = (props) => {
                 }}
                 className={classes.link}
               >
+                <AccountTree className={classes.icon} />
                 Visualize Chunks 
               </Link>
             </Grid>
@@ -213,10 +214,6 @@ const Chart = (props) => {
           keepMounted
           open={Boolean(toggleRoleMenu)}
           onClose={handleCloseRoleMenu}>
-          <MenuItem onClick={() => {
-            setCollabRole('Reader')
-            handleCloseRoleMenu()
-          }}>Read</MenuItem>
           <MenuItem onClick={() => {
             setCollabRole('Writer')
             handleCloseRoleMenu()

@@ -82,6 +82,7 @@ export const loadUserData = (pk, rememberMe, user_details) => {
 
                     const dummySharedObject = {
                         _id: 'bucketKey',
+                        role: 0,
                         bucketRoot: {}
                     }
                     
