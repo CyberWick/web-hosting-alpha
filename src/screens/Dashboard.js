@@ -405,6 +405,7 @@ export default function Dashboard(props) {
       const genThread = ThreadID.fromString(bucketRoot.thread);
       // ThreadID.
       const DBInfo = await client.getDBInfo(genThread);
+      console.log('DBINFO: ', DBInfo);
       //******************************************************* */
       const fetchRecentAct = await client.findByID(ThreadID.fromString(globalUsersThreadID), 'RecentActivities', bucketRoot.thread+':'+bucketRoot.name).catch(err => console.log('RECENT ACT ERR', err)); 
       if(fetchRecentAct) {
