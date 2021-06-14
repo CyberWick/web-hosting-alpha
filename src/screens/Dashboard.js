@@ -3,7 +3,6 @@ import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Drawer from '@material-ui/core/Drawer';
-import Box from '@material-ui/core/Box';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import List from '@material-ui/core/List';
@@ -14,18 +13,16 @@ import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/Grid';
 import Paper from '@material-ui/core/Paper';
 import Link from '@material-ui/core/Link';
-import MenuIcon from '@material-ui/icons/Menu';
 import Chart from '../components/Chart';
 import Deposits from '../components/Deposits';
 import Orders from '../components/Orders';
-import { ThreadID } from '@textile/hub';
+import { PrivateKey, PublicKey, ThreadID } from '@textile/hub';
 import { CircularProgress } from '@material-ui/core';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { AccountCircle } from '@material-ui/icons';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
-import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
@@ -33,8 +30,12 @@ import { Query } from '@textile/hub'
 import BucketsList from '../components/ListBuckets';
 import Title from '../components/Title'
 import Backdrop from '@material-ui/core/Backdrop';
-import NewBucket from '../components/newBucket.js';
+import NewBucket from '../components/newBucket.js'
+import { globalUsersThreadID } from '../constants/RegisteredUsers';
 import ListSharedBuckets from '../components/ListSharedBuckets.js';
+// import CircularProgress from '@material-ui/core/CircularProgress';
+import { reactLocalStorage } from 'reactjs-localstorage';
+
 
 function Copyright() {
   return (
@@ -158,13 +159,15 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
+const accessRole = ['N/A', 'Reader', 'Writer', 'Admin'];
 
 export default function Dashboard(props) {
   var pattern = new RegExp(/^(("[\w-\s]+")|([\w-]+(?:\.[\w-]+)*)|("[\w-\s]+")([\w-]+(?:\.[\w-]+)*))(@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$)|(@\[?((25[0-5]\.|2[0-4][0-9]\.|1[0-9]{2}\.|[0-9]{1,2}\.))((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\.){2}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\]?$)/i);
-  const dispatch = useDispatch()
   const classes = useStyles();
   const [open, setOpen] = useState(true);
   const [dialogOpen, setDialogOpen] = React.useState(false);
+  const spaceUser = useSelector(state => state.user_data.spaceUser); 
+  const textileUser = useSelector(state => state.user_data.textileUser);
   const buckets = useSelector(state => state.user_data.buckets); 
   const client = useSelector(state => state.user_data.client);
   const user_profile = useSelector(state => state.user_data.user_details)
@@ -176,18 +179,91 @@ export default function Dashboard(props) {
   const [listBucket, setListBucket] = useState([]);
   const [totalFiles, setTotalFiles] = useState(-1);
   const [operation, setOperation] = useState('');
-  const [selectedBucket, setSelectedBucket] = useState('')
+  const [recentActivity, setRecentActivity] = useState(null);
   const [new_fname,setfname] = useState(user_profile.fname)
   const [new_lname, setlname] = useState(user_profile.lname)
   const [new_email,setemail] = useState(user_profile.emailid)
   const [sharedListBucket, setSharedListBucket] = useState([]);
+  const [sharedBucketRoles, setSharedBucketRoles] = useState([]);
   const [isSharedSelected, setIsSharedSeleted] = useState(false);
   const [currSharedBucket, setCurrSharedBucket] = useState(-1);
-  const [sharedBucketMetaData, setSharedBucketMetaData] = useState([]);
   const [explore, setExplore] = useState("");
+
+  const watchCallback = async (reply, err) => {
+    if (!reply || !reply.message) return console.log('no message')
+
+    setLoading(true);
+
+    const bodyBytes = await spaceUser.identity.decrypt(reply.message.body)    
+    const decoder = new TextDecoder()
+    const body = decoder.decode(bodyBytes)
+
+    const jsonObject = JSON.parse(body.toString());
+    console.log('Just String: ', body.toString());
+    console.log('JSON object: ', jsonObject);
+
+    await client.create(threadID, 'shared', [jsonObject])
+    
+    await textileUser.deleteInboxMessage(reply.message.id)
+      .catch(err => console.log('Error while deleting message: ', err));
+
+    refreshSharedBuckets();
+
+    setLoading(false);
+
+  }
+
+  const onShareBucket = async(pubKey, email, role) => {
+    console.log('SHARING BUCKET');//, listBucket[currBucket]);
+    if(currBucket === -1) {
+      return alert('No active bucket selected');
+    } else {
+      console.log('ADDING ', pubKey, ' as ', role);
+      const accessRole = ['N/A', 'Reader', 'Writer', 'Admin'];
+      const roleID = accessRole.findIndex(item => item === role);
+      if(roleID === -1) {
+        return alert('Undefined role');
+      }
+      const roles = new Map();
+      roles.set(pubKey, roleID);
+      await buckets.pushPathAccessRoles(listBucket[currBucket].key, '', roles);
+      const shareJSON = {
+        type: 'SITE_SHARED',
+        role: roleID,
+        _id: listBucket[currBucket].key,
+        bucketRoot: listBucket[currBucket],
+      }
+      const shareMessage = JSON.stringify(shareJSON);
+      const encoder = new TextEncoder();
+      const shareBody = encoder.encode(shareMessage);
+      const pk = reactLocalStorage.get('privKey');
+      
+      await textileUser.sendMessage(PrivateKey.fromString(pk), PublicKey.fromString(pubKey), shareBody).catch(err => console.log('COULDNT SEND MESSAGE', err));
+      //******************************************************** */
+      const recentActivityCopy = {...recentActivity};
+      recentActivityCopy.member.push({
+        pubKey: pubKey,
+        role: roleID,
+        email: email,
+      });
+      recentActivityCopy.messages.push(user_profile.emailid+' ('+user_profile.fname+'): ' +'shared the project with '+ email + ' ('+role+')' +' at '+ Date(Date.now()).toString());
+      console.log('RECENT ACTIVITY COPY: ', recentActivityCopy);
+      await client.save(ThreadID.fromString(globalUsersThreadID), 'RecentActivities', [recentActivityCopy]);
+      setRecentActivity(recentActivityCopy);
+      //******************************************************** */  
+    }
+  }
   
+  const watchInbox = async() => {
+    const mailboxID = await textileUser.getMailboxID();
+    console.log('Mailbox created for user..');
+    const resp = await textileUser.watchInbox(mailboxID, watchCallback);
+    console.log(resp);
+  }
+
   useEffect(() => {
     console.log('Running useEffect');
+    watchInbox();    
     onLoadUser();
   }, []);
 
@@ -232,24 +308,77 @@ export default function Dashboard(props) {
   };
 
 
+  const loadInboxRequests = async() => {
+    const inboxResp = await textileUser.listInboxMessages();
+    // console.log('Inbox of user2: ', inboxResp);
+
+    const sharedEntriesToBeLoaded = [];
+
+    for(const element of inboxResp){
+        // Check signature
+        const msgBody = element.body
+        // const sig = element.signature
+        // const verify = await id.public.verify(msgBody, sig)
+        // console.log('Verificaion: ', verify);
+
+        // Check body
+        const bodyBytes = await spaceUser.identity.decrypt(msgBody)
+        const decoder = new TextDecoder()
+        const body = decoder.decode(bodyBytes)
+        
+        const jsonObject = JSON.parse(body.toString());
+        console.log('Just String: ', body.toString());
+        console.log('JSON object: ', jsonObject);
+
+        sharedEntriesToBeLoaded.push(jsonObject);
+        console.log('New shared entry created: ', jsonObject.threadID);
+
+
+        await textileUser.deleteInboxMessage(element.id)
+          .catch(err => console.log('Error ala rao: ', err));
+
+    }
+
+    if(sharedEntriesToBeLoaded.length!=0){
+      await client.create(threadID, 'shared', sharedEntriesToBeLoaded);
+    }
+    console.log('Done brooo..');
+  }
+
+  const refreshSharedBuckets = async() => {
+
+    const sharedEntriesOnThread = await client.find(threadID, 'shared', {});
+    console.log('All shared buckets present in the collection: ', sharedEntriesOnThread);
+
+    const tempList = []
+    const tempRolesList = []
+    for(const bucketObjet of sharedEntriesOnThread){
+      tempList.push(bucketObjet.bucketRoot);
+      tempRolesList.push(bucketObjet.role);
+    }
+    setSharedListBucket(tempList);
+    setSharedBucketRoles(tempRolesList);
+
+
+    // TODO: 
+    // Line 535: isSharedSeleted
+    //       - delete button
+
+    
+  }
+
+
   const onLoadUser = async() => {
     setLoading(true);
 
     // TODO: Add Fetch for shared buckets
-
-    let tempSharedList=[];
-    if(sharedBucketMetaData.length>=1){
-      sharedBucketMetaData.map(async(sharedMetatData, index)=>{
-        await buckets.withThread(sharedMetatData.threadID);
-        const root = await buckets.root(sharedMetatData.bucketKey);
-        tempSharedList.push(root);
-      });
-      setSharedListBucket(tempSharedList);
-    }
+    await loadInboxRequests();
+    await refreshSharedBuckets();
 
     const listBuckets = await buckets.existing();
     console.log('LIST: ', listBuckets);
     if(listBuckets.length > 0) {
+      await buckets.getOrCreate(listBuckets[0].name);
       await onLoadBucket(listBuckets[0], 0);
       setListBucket(prev => prev.concat(listBuckets));
     }
@@ -258,29 +387,34 @@ export default function Dashboard(props) {
     setLoading(false);
   }
 
-
-  const onSharedLoadBucket = async(bucketRoot, index) => {
-    setCurrBucket(index);
-    await buckets.withThread(sharedBucketMetaData[index].threadID);
-    const inLinks = await buckets.links(bucketRoot.key);
-    console.log("links", inLinks);
-    console.log('CLIENT', client);
-    const genThread = ThreadID.fromString(bucketRoot.thread);
-    const DBInfo = await client.getDBInfo(genThread);
-    setExplore(bucketRoot.path)
-    console.log("explore", explore)
-    setDBInfo(DBInfo);
-    setLinks(inLinks);
-  }
-
-  const onLoadBucket = async(bucketRoot, index) => {
+  const onLoadBucket = async(bucketRoot, index, isShared=false) => {
+      console.log('Before with..');
+      const id = threadID.toString();
       await buckets.withThread(bucketRoot.thread);
-      setCurrBucket(index);  
+      console.log('After with..', id);
+      if(isShared){
+        console.log('Loading shared bucket');
+        setCurrSharedBucket(index);
+      }else{
+        console.log('Loading user bucket');
+        setCurrBucket(index);
+      }
+      // await buckets.getOrCreate(bucketRoot.name);
       const inLinks = await buckets.links(bucketRoot.key);
       console.log("links", inLinks);
       console.log('CLIENT', client);
       const genThread = ThreadID.fromString(bucketRoot.thread);
+      // ThreadID.
       const DBInfo = await client.getDBInfo(genThread);
+      //******************************************************* */
+      const fetchRecentAct = await client.findByID(ThreadID.fromString(globalUsersThreadID), 'RecentActivities', bucketRoot.thread+':'+bucketRoot.name).catch(err => console.log('RECENT ACT ERR', err)); 
+      if(fetchRecentAct) {
+        console.log('RECENT ACTIVITIES ', bucketRoot.name, ': ', fetchRecentAct, fetchRecentAct.messages);
+        setRecentActivity(fetchRecentAct);
+      }
+      // const fetchCopy = {...fetchRecentAct};
+      // console.log('COPIED', fetchCopy);
+      //****************************************************** */
       setExplore(bucketRoot.path)
       console.log("explore", explore)
       setDBInfo(DBInfo);
@@ -295,6 +429,10 @@ export default function Dashboard(props) {
     } else {
       setLoading(true);
       const result = await buckets.remove(listBucket[currBucket].key);
+      //******************************************** */
+      await client.delete(ThreadID.fromString(globalUsersThreadID), 'RecentActivities', [listBucket[currBucket].thread+':'+ listBucket[currBucket].name]);
+      console.log('COLLECTION DELETED: ');
+      //******************************************** */
       const newBuckList = await buckets.existing()
       
       setListBucket(newBuckList)
@@ -329,14 +467,24 @@ export default function Dashboard(props) {
       }
       setOperation('Uploading files')
       setTotalFiles(files.length);
+      let streams = [];
       for (const file of files) {
         const num = file.path.indexOf("/");
-        const file_info = {content: file.stream(), mimeType: file.type};
+        const file_info = {content: file.stream(), path: file.path.substr(num+1),};
+        
         const pushFile = await buckets.pushPath(listBucket[currBucket].key, file.path.substr(num+1), file_info);
         console.log('PUSHFILE: ', pushFile);
+        streams.push(file_info);
         setTotalFiles(prev => (prev-1));
         //TODO: Clear all the previous files and overwrite the new added files.
       }
+      //******************************************************** */
+      const recentActivityCopy = {...recentActivity};
+      recentActivityCopy.messages.push(user_profile.emailid+' ('+user_profile.fname+'): ' +' updated the website at '+ Date(Date.now()).toString());
+      console.log('RECENT ACTIVITY COPY: ', recentActivityCopy);
+      await client.save(ThreadID.fromString(globalUsersThreadID), 'RecentActivities', [recentActivityCopy]);
+      setRecentActivity(recentActivityCopy);
+      //******************************************************** */
       const root = await buckets.root(listBucket[currBucket].key)
       setExplore(root.path)
       setTotalFiles(-1);
@@ -376,7 +524,7 @@ export default function Dashboard(props) {
     setIsSharedSeleted(newIsSharedSelected);
     if (newIsSharedSelected){
         if(sharedListBucket.length>=1){
-          await onSharedLoadBucket(sharedListBucket[0], 0);
+          await onLoadBucket(sharedListBucket[0], 0, true);
         } else {
           setCurrSharedBucket(-1);
         }
@@ -432,6 +580,7 @@ export default function Dashboard(props) {
                   explore={explore}
                   onDelete={onDeleteBucket}
                   onUpdate={onUpdateVersion}
+                  onShare={onShareBucket}
                   // onModify={onModifyBucket}
                   />
               </Paper>
@@ -442,10 +591,14 @@ export default function Dashboard(props) {
                 <Deposits dbInfo={dbInfo}/>
               </Paper>
             </Grid>
-            {/* Recent Orders */}
+            {/* Directory Structure */}
             <Grid item xs={12}>
               <Paper className={classes.paper}>
-              <Orders bucketKey = {isSharedSelected===false? listBucket[currBucket].key  : sharedListBucket[currSharedBucket].key} buckets = {buckets} setExplore={setExplore}/>
+              <Orders 
+                bucketKey = {isSharedSelected===false? listBucket[currBucket].key  : sharedListBucket[currSharedBucket].key} 
+                sharedRole={isSharedSelected===false? 0  : sharedBucketRoles[currSharedBucket]}
+                buckets = {buckets} setExplore={setExplore} 
+                recentActivity={recentActivity}/>
               </Paper>
             </Grid>
           </Grid>
@@ -560,14 +713,14 @@ export default function Dashboard(props) {
           <Divider />
           <div className={clsx(classes.bucketListStyle,  (isSharedSelected === false) && classes.hideList)}>
             <List >
-              <ListSharedBuckets bucketList={sharedListBucket} onSharedLoadBucket = {onSharedLoadBucket}/>
+              <ListSharedBuckets bucketList={sharedListBucket} onSharedLoadBucket = {onLoadBucket}/>
             </List>
           </div>
           <Divider  />
           
         </div>  
         <Divider  />
-        <NewBucket setLoading={setLoading} buckets={buckets} bucketList={listBucket} setBucketList={setListBucket} onLoadBucket = {onLoadBucket}  />
+        <NewBucket setIsSharedSeleted={setIsSharedSeleted} userTID={threadID} setLoading={setLoading} buckets={buckets} bucketList={listBucket} setBucketList={setListBucket} onLoadBucket = {onLoadBucket}  />
       </Drawer>
       {screen}
     </div>

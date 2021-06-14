@@ -3,11 +3,8 @@ import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import TextField from '@material-ui/core/TextField';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import Checkbox from '@material-ui/core/Checkbox';
 import Link from '@material-ui/core/Link';
 import Grid from '@material-ui/core/Grid';
-import Box from '@material-ui/core/Box';
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
@@ -29,18 +26,32 @@ function Copyright() {
 
 const useStyles = makeStyles((theme) => ({
   paper: {
-    marginTop: theme.spacing(8),
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
+    // marginLef
+    // justifyContent: '',
+  },
+  inPaper: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: theme.spacing(8),
+    backgroundColor: 'white',
+    borderRadius: 10,
+    opacity: 0.9,
+    width: window.innerWidth/4,
   },
   avatar: {
+    marginTop: theme.spacing(8),
     margin: theme.spacing(1),
     backgroundColor: theme.palette.secondary.main,
   },
   form: {
-    width: '100%', 
+    width: '80%', 
     marginTop: theme.spacing(3),
+    marginBottom: theme.spacing(8),
   },
   submit: {
     margin: theme.spacing(3, 0, 2),
@@ -70,6 +81,7 @@ const SignUp = (props) => {
     <Container component="main" maxWidth="xs">
       <CssBaseline />
       <div className={classes.paper}>
+        <div className={classes.inPaper}>
         <Avatar className={classes.avatar}>
           <LockOutlinedIcon />
         </Avatar>
@@ -118,12 +130,6 @@ const SignUp = (props) => {
                 onChange={(e) => onChangeemail(e)}
               />
             </Grid>
-            {/* <Grid item xs={12}>
-              <FormControlLabel
-                control={<Checkbox value="allowExtraEmails" color="primary" />}
-                label="I want to receive inspiration, marketing promotions and updates via email."
-              />
-            </Grid> */}
           </Grid>
           <Button
             type="submit"
@@ -155,6 +161,7 @@ const SignUp = (props) => {
             </Grid>
           </Grid>
         </form>
+        </div>
       </div>
       {/* <Box mt={5}>
         <Copyright />

@@ -12,7 +12,7 @@ const SharedBucketsList = (props) => {
 			<div>
 			{	
 				props.bucketList.map((bucket, index)=>{
-					return(<ListItem key = {bucket.key} onClick = {()=>props.onSharedLoadBucket(bucket, index)} button>
+					return(<ListItem key = {bucket.key} onClick = {()=>props.onSharedLoadBucket(bucket, index, true)} button>
 						<ListItemText primary= {bucket.name} />
 					</ListItem>)
 				})

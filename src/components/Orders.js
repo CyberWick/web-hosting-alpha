@@ -9,7 +9,14 @@ import {
   IconButton,
   Button,
   Menu,
-  MenuItem
+  MenuItem,
+  Grid,
+  Modal,
+  Typography,
+  Paper,
+  ListItem,
+  ListItemText,
+  List
 } from '@material-ui/core'
 import { makeStyles } from '@material-ui/core/styles';
 import CreateIcon from '@material-ui/icons/Create';
@@ -24,12 +31,17 @@ import Backdrop from '@material-ui/core/Backdrop';
 import Title from './Title';
 
 import { Users } from '@spacehq/sdk';
-import { Buckets, PrivateKey } from '@textile/hub';
+import { Buckets, PrivateKey, ThreadID } from '@textile/hub';
+import { globalUsersThreadID } from '../constants/RegisteredUsers.js';
+import { useSelector } from 'react-redux';
 
 // Generate Order Data
 function createData(id, date, name, isDirectory, cid) {
   return { id, date, name, isDirectory, cid };
 }
+//*********************************** */
+const Roles = ['N/A', 'Reader', 'Writer', 'Admin'];
+//*********************************** */
 
 const useStyles = makeStyles((theme) => ({
   tableCell: {
@@ -61,6 +73,10 @@ export default function Orders(props) {
   const initialData = [
     createData(0, '16 Mar, 2019', 'Data Loading', 0, "")
   ];
+  //********************************************** */
+  const user_details = useSelector(state => state.user_data.user_details);
+  const client = useSelector(state => state.user_data.client);
+  //********************************************* */
   const [navStack, setNavStack] = useState([]);
   const [fileToBeEdited, setFileToBeEdited] = useState('');
   const [currentPath, setCurrentPath] = useState('/');
@@ -71,11 +87,16 @@ export default function Orders(props) {
   const [toggleFolderModal, setToggleFolderModal] = useState(false);
   const [toggleFileModal, setToggleFileModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [recentModalOpen, setRecentModalOpen] = useState(false);
+  const recentActivity = props.recentActivity;
 
   const handleFolderDrop = async (acceptedFiles) => {
     setLoading(true);
     handleCloseAddMenu();
-
+    //********************************************* */
+    const path =  acceptedFiles[0].path.substring(0,acceptedFiles[0].path.indexOf('/'));
+    console.log('PATH OF FOLDER: ', path);
+    //********************************************* */
     for(const file of acceptedFiles){
         console.log(file.name);
         const file_info = {content: file.stream(), mimeType: file.type};
@@ -83,6 +104,11 @@ export default function Orders(props) {
         await props.buckets.pushPath(props.bucketKey, currentPath.substring(1) + file.path, file_info);
         console.log('File uploaded!!')
     }
+    //************************************************** */
+    recentActivity.messages.push(user_details.emailid+' ('+user_details.fname+'): ' +'added a folder '+ ('/' + currentPath.substring(1)+path) +' at '+ Date(Date.now()).toString());
+    console.log('RECENT ACTIVITY IN DELETE', recentActivity);
+    await client.save(ThreadID.fromString(globalUsersThreadID), 'RecentActivities', [recentActivity]);
+    //************************************************** */
     // setOpen(false);
     const root = await props.buckets.root(props.bucketKey)
     props.setExplore(root.path)
@@ -94,7 +120,6 @@ export default function Orders(props) {
 const handleFileDrop = async (acceptedFiles) => {
   setLoading(true);
   handleCloseAddMenu();
-
   for(const file of acceptedFiles){
       console.log(file.name);
       const file_info = {content: file.stream(), mimeType: file.type};
@@ -102,6 +127,11 @@ const handleFileDrop = async (acceptedFiles) => {
       await props.buckets.pushPath(props.bucketKey, currentPath.substring(1) + file.name, file_info);
       console.log('File uploaded!!')
   }
+  //************************************************** */
+  recentActivity.messages.push(user_details.emailid+' ('+user_details.fname+'): ' +'added a file '+ ('/' + currentPath.substring(1)+acceptedFiles[0].name) +' at '+ Date(Date.now()).toString());
+  console.log('RECENT ACTIVITY IN DELETE', recentActivity);
+  await client.save(ThreadID.fromString(globalUsersThreadID), 'RecentActivities', [recentActivity]);
+  //************************************************** */
   // setOpen(false);
   const root = await props.buckets.root(props.bucketKey)
   props.setExplore(root.path)
@@ -123,6 +153,11 @@ const handleEditDrop = async (acceptedFiles) => {
   }else{
     const file_info = {content: file.stream(), mimeType: file.type};
     await props.buckets.pushPath(props.bucketKey, currentPath.substring(1) + file.name, file_info);
+    //************************************************** */
+    recentActivity.messages.push(user_details.emailid+' ('+user_details.fname+'): ' +'edited a file '+ ('/' + currentPath.substring(1)+acceptedFiles[0].name) +' at '+ Date(Date.now()).toString());
+    console.log('RECENT ACTIVITY IN DELETE', recentActivity);
+    await client.save(ThreadID.fromString(globalUsersThreadID), 'RecentActivities', [recentActivity]);
+    //************************************************** */
   }
   const root = await props.buckets.root(props.bucketKey)
   props.setExplore(root.path)
@@ -152,6 +187,11 @@ const handleEditModalClose = () => {
     setLoading(true);
     console.log('Clicked delete.. ');
     await props.buckets.removePath(props.bucketKey, currentPath.substring(1) + name);
+    //************************************************** */
+    recentActivity.messages.push(user_details.emailid+' ('+user_details.fname+'): ' +'deleted '+ ('/' + currentPath.substring(1) + name) +' at '+ Date(Date.now()).toString());
+    console.log('RECENT ACTIVITY IN DELETE', recentActivity);
+    await client.save(ThreadID.fromString(globalUsersThreadID), 'RecentActivities', [recentActivity]);
+    //************************************************** */
     console.log('file deleted!!');
     const root = await props.buckets.root(props.bucketKey)
     props.setExplore(root.path)
@@ -194,7 +234,7 @@ const handleEditModalClose = () => {
 
   const fetchData = async (bucketKey, buckets) => {
     setLoading(true);
-    console.log("Searchin...")
+    console.log("Searchin... in ", buckets)
     const list = await buckets.listPath(bucketKey, '', 10)
     // console.log(list)
     setNavStack([]);
@@ -233,10 +273,17 @@ const handleEditModalClose = () => {
     <React.Fragment>
       <div style={{display: 'flex'}}>
         <Title style={{
-          width: '100%'
+          width: '100%',
+          // backgroundColor: 'yellow',
         }}>{currentPath}</Title>
-        <Button variant="contained" color="primary" onClick={handleOpenAddMenu}>
-          Add
+        {/*********************************** */ }
+        <Button variant="contained" color="secondary" style={{marginRight: 10}} onClick={() => setRecentModalOpen(true)}>
+          ACTIVITIES
+        </Button>
+        {/*********************************** */ }
+        <Button variant="contained" color="primary" onClick={handleOpenAddMenu} 
+        className={clsx(classes.staticButtons, (props.sharedRole !== 0) && classes.hideModifyButtons)}>
+          ADD
         </Button>
         <Menu
           id="simple-menu"
@@ -261,6 +308,60 @@ const handleEditModalClose = () => {
             handleClose={handleFileModalClose}
             enableFolder={false}
             dropCallBackFun={handleFileDrop}/>
+        {/*********************************** */ }
+        <Modal open={recentModalOpen}
+          onClose={() => setRecentModalOpen(false)}
+          style={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}
+        >
+          <div style={{backgroundColor: 'white', width: 1000, display: 'flex', justifyContent: 'center'}}>
+            <Grid spacing={2} container direction='column' style={{marginLeft: 100, marginRight: 100, marginTop: 20}}>
+              <Grid item container direction='column'>
+                <Grid item>
+                  <Typography color='primary' >Members: </Typography>
+                </Grid>
+                <Grid item>
+                <Table >
+                  <TableHead>
+                    <TableRow>
+                      <TableCell align='left'>Email-ID</TableCell>
+                      <TableCell align='left'>Role</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {recentActivity.member.map((item) => (
+                      <TableRow key={item.pubKey}>
+                        <TableCell align='left'>{item.email}</TableCell>
+                        <TableCell align='left'>{Roles[item.role]}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                </Grid>
+              </Grid>
+              <Grid item container direction='column'>
+                <Grid item>
+                  <Typography color='secondary'>Activities: </Typography>
+                </Grid>
+                <Grid item>
+                  <Paper style={{maxHeight: 200, overflow: 'auto'}}>
+                      <List style={{width: 800}}>
+                        {recentActivity.messages.map((item) => (
+                          <ListItem alignItems='flex-start' key={item}>
+                            <ListItemText 
+                              primary={item.substring(0, item.indexOf(':'))}
+                              secondary={item.substring(item.indexOf(':')+1)}
+                            />
+                          </ListItem>
+                        )) }
+                      </List>
+                  </Paper>
+                </Grid>
+              </Grid>
+            </Grid>
+          </div>
+          
+        </Modal>
+        {/*********************************** */ }
       </div>
       <Table size="small">
         <TableHead>
@@ -330,7 +431,7 @@ const handleEditModalClose = () => {
                 <IconButton
                   aria-label="delete"
                   color="secondary"
-                  className={clsx(classes.modifyButtons, (row.isDirectory === 1) && classes.hideModifyButtons)}
+                  className={clsx(classes.modifyButtons, (row.isDirectory === 1 || props.sharedRole === 2) && classes.hideModifyButtons)}
                   onClick={() => {
                     deleteListener(row.name);
                   }}>
