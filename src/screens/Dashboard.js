@@ -274,9 +274,8 @@ export default function Dashboard(props) {
   }
 
   const onLoadBucket = async(bucketRoot, index) => {
-      // await buckets.withThread(threadID)
+      await buckets.withThread(bucketRoot.thread);
       setCurrBucket(index);  
-      // await buckets.getOrCreate(bucketRoot.name);
       const inLinks = await buckets.links(bucketRoot.key);
       console.log("links", inLinks);
       console.log('CLIENT', client);
